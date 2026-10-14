@@ -6,10 +6,13 @@ __pycache__/
 *.egg-info/
 
 # Licensed CSE Data Library files and anything derived at row level must never be committed
-data/
+/data/
+/pipeline/data/
 work/
 dist/
 logs/
+# the dashboard's data-access code is source, not data
+!dashboard/data/
 *.xls
 *.xlsx
 *.csv

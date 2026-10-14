@@ -254,6 +254,63 @@ def hiru(http: Polite, lang: str, start: str, end: str, out: Path, log, fetch_ar
         hiru_articles(http, lang, out, log)
 
 
+def extract_body(soup: BeautifulSoup) -> str:
+    """Hiru article text lives in <div id="this-article" class="description-content"> as plain text with
+    <br> line breaks (verified on 2023, 2024 and 2026 pages); fall back to long <p> paragraphs."""
+    node = soup.select_one("#this-article") or soup.select_one(".description-content")
+    if node is not None:
+        text = " ".join(node.get_text(" ", strip=True).split())
+        if len(text) > 40:
+            return text[:5000]
+    for t in soup(["script", "style", "nav", "header", "footer", "aside"]):
+        t.decompose()
+    paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
+    return " ".join(p for p in paras if len(p) > 40 and "All rights Reserved" not in p)[:5000]
+
+
+def refetch_empty(http: Polite, lang: str, out: Path, log):
+    """Re-fetch Hiru articles saved without body text (first run used a parser that missed the
+    #this-article container). Rewrites hiru_<lang>_articles.csv; safe to stop and re-run."""
+    apath = out / f"hiru_{lang}_articles.csv"
+    done_path = out / f"hiru_{lang}_refetched.csv"
+    if not apath.exists():
+        return
+    with open(apath, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    fields = list(rows[0].keys()) if rows else []
+    done = {}
+    if done_path.exists():
+        with open(done_path, encoding="utf-8") as f:
+            done = {r["url"]: r["body"] for r in csv.DictReader(f)}
+    todo = [r for r in rows if len((r.get("body") or "").strip()) < 40 and r["url"] not in done]
+    log(f"Hiru {lang}: {len(todo)} articles to re-fetch for body text")
+    newfile = not done_path.exists()
+    df = open(done_path, "a", newline="", encoding="utf-8")
+    dw = csv.DictWriter(df, ["url", "body"])
+    if newfile:
+        dw.writeheader()
+    for n, r in enumerate(todo, 1):
+        resp = http.get(r["url"])
+        body = extract_body(BeautifulSoup(resp.text, "lxml")) if resp is not None else ""
+        dw.writerow({"url": r["url"], "body": body})
+        done[r["url"]] = body
+        if n % 25 == 0:
+            df.flush()
+            log(f"Hiru {lang}: re-fetched {n}/{len(todo)}")
+    df.close()
+    for r in rows:
+        if len((r.get("body") or "").strip()) < 40 and done.get(r["url"]):
+            r["body"] = done[r["url"]]
+    tmp = apath.with_suffix(".tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fields)
+        w.writeheader()
+        w.writerows(rows)
+    tmp.replace(apath)
+    filled = sum(len((r.get("body") or "").strip()) >= 40 for r in rows)
+    log(f"Hiru {lang}: {filled}/{len(rows)} articles now have body text")
+
+
 def hiru_articles(http: Polite, lang: str, out: Path, log):
     hpath, apath = out / f"hiru_{lang}_headlines.csv", out / f"hiru_{lang}_articles.csv"
     with open(hpath, encoding="utf-8") as f:
@@ -274,10 +331,7 @@ def hiru_articles(http: Polite, lang: str, out: Path, log):
         if resp is None:
             continue
         soup = BeautifulSoup(resp.text, "lxml")
-        for t in soup(["script", "style", "nav", "header", "footer", "aside"]):
-            t.decompose()
-        paras = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
-        body = " ".join(p for p in paras if len(p) > 40)[:5000]
+        body = extract_body(soup)
         meta_time = soup.find("meta", attrs={"property": "article:published_time"})
         page_dt = meta_time["content"] if meta_time and meta_time.get("content") else ""
         if not page_dt:
@@ -299,6 +353,7 @@ def main():
     ap.add_argument("--out", default="news_raw")
     ap.add_argument("--only", nargs="*", default=["adaderana", "hiru-en", "hiru-si", "hiru-ta"])
     ap.add_argument("--headlines-only", action="store_true", help="skip fetching article pages")
+    ap.add_argument("--refetch-empty", action="store_true", help="only re-fetch Hiru articles saved without body text")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -311,6 +366,15 @@ def main():
         logf.flush()
 
     http = Polite(log)
+    if a.refetch_empty:
+        for lang in ("english", "sinhala", "tamil"):
+            try:
+                refetch_empty(http, lang, out, log)
+            except KeyboardInterrupt:
+                log("stopped by user - re-run the same command to resume")
+                sys.exit(1)
+        log("finished")
+        return
     jobs = {"adaderana": lambda: adaderana(http, a.start, a.end, out, log),
             "hiru-en": lambda: hiru(http, "english", a.start, a.end, out, log, not a.headlines_only),
             "hiru-si": lambda: hiru(http, "sinhala", a.start, a.end, out, log, not a.headlines_only),

@@ -43,7 +43,7 @@ data/
   resilient.py             wrapper the factory returns: retry with backoff, short-TTL cache, typed errors
   errors.py                DataUnavailable (unreachable after retries) and NoData (valid query, no rows)
   mock_repository.py       seeded synthetic data — reproducible across reruns; ?scenario= failure hooks
-  postgres_repository.py   stub: same methods, raise NotImplementedError
+  postgres_repository.py   read-only SQL over the published tables (Neon Postgres, or a local SQLite copy)
 services/
   stress.py                vectorised Monte Carlo from stored parameters (online-safe)
   perf.py                  page-render and stress-test timers → `cse.perf` log
@@ -213,33 +213,33 @@ per-session ring buffer:
 participant experiences; for the report, pair it with a browser measurement
 (DevTools → Network → "Load") on the evaluation device.
 
-## Switching to Postgres later
+## Live data (Postgres on Neon)
 
-1. Implement each method in `data/postgres_repository.py` with a read-only SQL
-   query. Keep the return shapes exactly as documented in `data/repository.py`
-   — the pages depend on those column names. Raise `data.errors.NoData` when a
-   query is valid but returns no rows; let connection errors propagate (the
-   wrapper retries them).
-2. Add `sqlalchemy` and `psycopg[binary]` to `requirements.txt`. Create the
-   engine with `pool_pre_ping=True` so a connection that died while Neon slept
-   is replaced instead of failing the first query.
-3. In Streamlit secrets set
-   ```toml
-   DATA_SOURCE = "postgres"
-   DATABASE_URL = "postgresql://readonly_user:...@host/db?sslmode=require"
-   ```
-4. Redeploy. The demo banner disappears automatically because it is driven by
-   the same `DATA_SOURCE` flag as the repository factory. No page file changes.
+The pipeline publishes 13 tables (`pipeline/scripts/publish_dashboard.py` → `dist/db/*.parquet`).
+`pipeline/scripts/load_to_postgres.py` copies them into Neon: it asks for the owner connection
+string (hidden input, never stored), loads each table through a staging name and swaps it in
+inside one transaction, creates the read-only role `dashboard_ro` with a random password, and
+prints the read-only connection string. Only that read-only string goes into Streamlit secrets:
+
+```toml
+PASSCODE = "..."
+DATA_SOURCE = "postgres"
+DATABASE_URL = "postgresql://dashboard_ro:...@<host>/neondb?sslmode=require"
+```
+
+The demo banner disappears automatically because it is driven by the same `DATA_SOURCE` flag as
+the repository factory. For local development the same repository reads a SQLite copy:
+`DATABASE_URL = "sqlite:///path/to/cse_dashboard.sqlite"`.
 
 ## Deploying to Streamlit Community Cloud
 
-Push to GitHub (secrets are git-ignored), create the app pointing at `app.py`,
-and paste the contents of your `secrets.toml` into *App settings → Secrets*.
-Imports are deliberately light (Streamlit, Plotly, pandas, NumPy) to stay
-within the free tier's memory; no torch / transformers / xgboost / shap.
+Create the app from the GitHub repository with main file `dashboard/app.py` (its
+`requirements.txt` sits beside it) and paste the three secrets above into *App settings →
+Secrets*. Imports are deliberately light (Streamlit, Plotly, pandas, NumPy, SQLAlchemy, psycopg)
+to stay within the free tier's memory; no torch / transformers / xgboost / shap.
 
 ## Placeholders to replace
 
 - `QUESTIONNAIRE_URL` in `config.py`
 - `PASSCODE` in secrets
-- Company names in `mock_repository.py` are labels only; every figure is synthetic.
+- Company names in `mock_repository.py` are labels only; every figure in mock mode is synthetic.
