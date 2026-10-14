@@ -5,7 +5,7 @@ inner-validation macro-F1 across the walk-forward blocks is deployed; a tie keep
 Reads work/results/ablation/<set>/registry_xgb.json, writes work/results/feature_selection.json and
 assembles the deployed xgb_* files in work/results/ from the selected set of each horizon.
 
-Usage: python scripts/select_feature_set.py [--sets prices macro full]
+Usage: python scripts/select_feature_set.py [--sets prices macro sentiment full]
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "work" / "results"
-ORDER = ["prices", "macro", "full"]          # simplest first (tie-break)
+ORDER = ["prices", "macro", "sentiment", "full"]   # simplest first (tie-break)
 
 
 def main():

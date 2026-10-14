@@ -13,8 +13,8 @@ fills scores with 0 and counts with 0):
   sent_co_count   number of the company's articles on day t (0 when none)
   sent_co_decay3  decayed company score over days t, t-1, t-2 (weights DECAY_WEIGHTS; days without
                   articles are skipped and the weights renormalised)
-  sent_mkt_mean   market-day index: mean score of all articles that are market news or linked to
-                  any constituent on day t (the fallback when a company has no news)
+  sent_mkt_mean   market-day index: mean score of every business/economy article (all three
+                  languages) on day t (the fallback when a company has no news)
   sent_mkt_count  number of articles in that index on day t
   sent_mkt_decay3 decayed market index, same weights
 """
@@ -61,8 +61,10 @@ def sentiment_features(articles: pd.DataFrame, calendar: pd.DatetimeIndex, secur
     co_count = g.size().unstack().reindex(index=days, columns=securities).fillna(0.0)
     co_decay = _decay(co_mean, co_count)
 
-    # market-day index: market news or any linked constituent
-    mk = a[a["market_news"].fillna(False).astype(bool) | a.index.isin(links.index)]
+    # market-day index: every collected article (all are business/economy news: Ada Derana Biz, and Hiru
+    # articles that passed the scraper's business-relevance filter) - author's decision 2026-10-14, so
+    # Sinhala and Tamil news, which rarely name a listed company, still enter the model
+    mk = a
     mg = mk.groupby("trading_day")["score"]
     mk_mean = mg.mean().reindex(days).to_frame("m")
     mk_count = mg.size().reindex(days).fillna(0.0).to_frame("m")

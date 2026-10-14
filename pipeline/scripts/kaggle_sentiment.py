@@ -48,8 +48,10 @@ def sh(cmd):
 
 def load_articles(news: Path) -> pd.DataFrame:
     frames = []
+    # article files only: adaderana_biz_en.csv and hiru_<lang>_articles.csv (not the *_refetched.csv
+    # side files, whose bodies are already merged into the article files, nor the headline lists)
     for f in sorted(news.rglob("*.csv")):
-        if "headlines" in f.name:
+        if not (f.name.startswith("adaderana") or f.name.endswith("_articles.csv")):
             continue
         d = pd.read_csv(f, dtype=str)
         frames.append(d)

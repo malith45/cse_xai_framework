@@ -34,6 +34,9 @@ LABELS = {
     "policy_rate": "Central Bank policy rate", "awpr": "prime lending rate (AWPR)",
     "tbill_91d": "3-month Treasury bill yield", "tbill_spread_364_91": "1-year minus 3-month T-bill yield",
     "ccpi_yoy": "inflation (Colombo CPI, year on year)",
+    "sent_co_mean": "today's news tone about the company", "sent_co_count": "number of news articles about the company today",
+    "sent_co_decay3": "news tone about the company, last 3 days", "sent_mkt_mean": "today's market news tone",
+    "sent_mkt_count": "number of market news articles today", "sent_mkt_decay3": "market news tone, last 3 days",
 }
 
 

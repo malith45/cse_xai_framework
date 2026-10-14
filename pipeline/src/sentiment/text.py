@@ -77,8 +77,13 @@ ALIASES: dict[str, list[str]] = {
 STRICT = {"CTC", "SUN", "CIC", "PLC", "AEL", "RCL", "MGT", "LWL", "BIL", "CCS", "HNB", "NDB", "JKH", "SLTL"}
 
 MARKET_TERMS = ["ASPI", "S&P SL20", "Colombo Stock Exchange", "CSE", "stock market", "share market",
-                "කොටස් වෙළෙඳපොළ", "කොළඹ කොටස් හුවමාරුව", "පොදු කොටස් මිල දර්ශකය",
-                "பங்குச் சந்தை", "கொழும்பு பங்குச் சந்தை", "அனைத்து பங்கு விலைச் சுட்டெண்"]
+                # Sinhala (both spellings of "market" occur in Hiru text): stock market, Colombo stock
+                # (exchange/market), share exchange, All Share Price Index
+                "කොටස් වෙළෙඳපොළ", "කොටස් වෙළඳපොළ", "කොළඹ කොටස්", "කොටස් හුවමාරු", "පොදු කොටස් මිල දර්ශකය",
+                "සියලු කොටස් මිල දර්ශකය",
+                # Tamil: share market (with and without the space), Colombo share exchange, All Share Price Index
+                "பங்குச் சந்தை", "பங்குச்சந்தை", "கொழும்பு பங்குச் சந்தை", "கொழும்பு பங்குப் பரிவர்த்தனை",
+                "அனைத்து பங்கு விலைச் சுட்டெண்"]
 
 
 def _pattern(alias: str) -> re.Pattern:

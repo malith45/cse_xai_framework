@@ -38,6 +38,8 @@ python scripts/build_panel.py --from-raw        # M1 + M2: adjusted prices, macr
 python -m pytest tests -q                       # readers, identifiers, leakage tests (incl. macro availability)
 python scripts/run_xgb_baselines.py --feature-set prices --skip-baselines   # ablation: prices only
 python scripts/run_xgb_baselines.py --feature-set macro                    # M4/M5 XGBoost + baselines
+python scripts/build_sentiment.py               # M3 -> features + dashboard news tables (after the Kaggle run)
+python scripts/build_panel.py && python scripts/run_xgb_baselines.py --feature-set full --skip-baselines
 python scripts/select_feature_set.py            # deployed set per horizon, chosen on inner validation
 python scripts/run_risk.py                      # M6 rolling VaR + Kupiec
 python scripts/evaluate.py                      # M7 -> work/results/evaluation.xlsx

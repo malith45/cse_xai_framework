@@ -39,7 +39,9 @@ def _copy_insert(table, conn, keys, data_iter):
 
 def main(folder: str):
     url = os.environ.get("ADMIN_DATABASE_URL") or getpass.getpass("Paste the Neon connection string (hidden) and press Enter: ").strip()
-    url = url.strip().removeprefix("psql").strip().strip("'\"")  # accept the console's "psql '...'" snippet too
+    # drop invisible characters a console paste can add (e.g. Ctrl+V captured as \x16), spaces and line breaks
+    url = "".join(ch for ch in url if ch.isprintable() and not ch.isspace())
+    url = url.removeprefix("psql").strip("'\"")  # accept the console's "psql '...'" snippet too
     if not url.startswith(("postgres://", "postgresql://")):
         sys.exit("That does not look like a Postgres connection string (it should start with postgresql://).")
     if url.startswith("postgres://"):

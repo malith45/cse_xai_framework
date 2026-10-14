@@ -146,10 +146,13 @@ def build_panel(prices: pd.DataFrame, indices: pd.DataFrame, securities: list[st
 
 
 from pipeline.macro import MACRO  # noqa: E402
+from sentiment.features import SENTIMENT  # noqa: E402
 
 FEATURES_PRICES = TECHNICAL + RETURNS_VOL + MARKET          # 35 price/volume/index features (first run)
 FEATURE_SETS = {
     "prices": FEATURES_PRICES,
     "macro": FEATURES_PRICES + MACRO,                       # + 7 CBSL/DCS macro features (2026-10-14)
+    "sentiment": FEATURES_PRICES + SENTIMENT,               # + 6 news-sentiment features
+    "full": FEATURES_PRICES + MACRO + SENTIMENT,            # everything in Table 4.6
 }
 FEATURES = FEATURES_PRICES  # default kept for backward compatibility; scripts select a set explicitly

@@ -52,6 +52,11 @@ def main():
     cal = pd.DatetimeIndex(sorted(ix["date"].unique()))
     macro = macro_features(cal)
     panel, report = build_panel(adj, ix, macro=macro)
+    sf = WORK / "sentiment_features.parquet"
+    if sf.exists():   # M3 output (scripts/build_sentiment.py); company-day features, NaN before the news period
+        s = pd.read_parquet(sf)
+        panel = panel.merge(s, on=["security_id", "date"], how="left")
+        report["sentiment_rows_with_company_news"] = int((panel["sent_co_count"] > 0).sum())
     panel.to_parquet(WORK / "panel_all.parquet")
     report["macro_columns"] = list(macro.columns)
     json.dump(report, open(WORK / "m2_report.json", "w"), indent=1)

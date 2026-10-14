@@ -145,13 +145,22 @@ def main():
         mr["var_1d_95"] = mr["date"].map(v95).round(3)
         tables["market_risk"] = mr.dropna(subset=["realised_vol_20d"])
 
-    # sentiment (when M3 outputs exist)
-    sp = RES / "articles_daily.parquet"
-    if sp.exists():
-        for name in ("sentiment_daily", "article"):
-            f = RES / f"{name}.parquet"
-            if f.exists():
-                tables[name] = pd.read_parquet(f)
+    # sentiment (when M3 outputs exist; scripts/build_sentiment.py) - headlines and scores only, never body text
+    if (RES / "sentiment_daily.parquet").exists():
+        sd = pd.read_parquet(RES / "sentiment_daily.parquet")
+        sd = sd[(sd["security_id"] == "_MARKET") | sd["security_id"].isin(sids)]
+        tables["sentiment_daily"] = pd.DataFrame({
+            "ticker": sd["security_id"].map(lambda s: s if s == "_MARKET" else ticker(s)), "date": sd["date"],
+            "company_score": sd["company_score"].round(4), "article_count": sd["article_count"].astype(int),
+            "market_score": sd["market_score"].round(4), "market_articles": sd["market_articles"].fillna(0).astype(int)})
+    if (RES / "article.parquet").exists():
+        ar = pd.read_parquet(RES / "article.parquet")
+        ar = ar[ar["security_id"].isna() | ar["security_id"].isin(sids)]
+        tables["article"] = pd.DataFrame({
+            "ticker": ar["security_id"].map(lambda s: None if s is None or pd.isna(s) else ticker(s)),
+            "trading_day": ar["trading_day"], "published": pd.to_datetime(ar["published"], errors="coerce"),
+            "headline": ar["headline"], "source": ar["source"], "language": ar["language"], "url": ar["url"],
+            "score": ar["score"]})
 
     # how reliable calls are by distance from the cut-off (out-of-sample, from evaluate.py)
     ev = RES / "evaluation.xlsx"

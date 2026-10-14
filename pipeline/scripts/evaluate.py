@@ -43,18 +43,19 @@ def mcnemar(y, a, b) -> tuple[int, int, float]:
     return n01, n10, p
 
 
-ABLATION_ORDER = ["prices", "macro", "full"]
+ABLATION_ORDER = ["prices", "macro", "sentiment", "full"]
 
 
 def feature_ablation() -> pd.DataFrame:
     """XGBoost with each feature set (work/results/ablation/<set>/), on the rows every set predicted.
 
-    McNemar's exact test compares each set with the previous one (does adding the group change which
-    calls are right?)."""
+    McNemar's exact test compares each set with the prices-only model (does adding the group change
+    which calls are right?)."""
     sets = [s for s in ABLATION_ORDER if (RES / "ablation" / s / "xgb_predictions.parquet").exists()]
     if len(sets) < 2:
         return pd.DataFrame()
     pr = {s: pd.read_parquet(RES / "ablation" / s / "xgb_predictions.parquet") for s in sets}
+    sel = json.load(open(RES / "feature_selection.json")) if (RES / "feature_selection.json").exists() else {}
     rows = []
     for hz in ("t1", "t5"):
         key = ["security_id", "date"]
@@ -64,16 +65,17 @@ def feature_ablation() -> pd.DataFrame:
             d = d.rename(columns={"pred": f"pred_{s}", "p_up": f"p_{s}"})
             m = d if m is None else m.merge(d.drop(columns="label"), on=key, how="inner")
         y = m["label"].astype(int).values
-        for i, s in enumerate(sets):
+        for s in sets:
             r = metrics(y, m[f"pred_{s}"].astype(int).values, m[f"p_{s}"].values)
-            r.update({"horizon": hz, "feature_set": s})
-            if i:
-                n01, n10, p = mcnemar(y, m[f"pred_{s}"].astype(int).values, m[f"pred_{sets[i - 1]}"].astype(int).values)
-                r.update({"vs_previous_set": sets[i - 1], "right_only_this_set": n01, "right_only_previous": n10,
-                          "mcnemar_p": p})
+            r.update({"horizon": hz, "feature_set": s,
+                      "inner_val_f1_macro": sel.get("mean_inner_val_f1_macro", {}).get(hz, {}).get(s),
+                      "deployed": sel.get("deployed", {}).get(hz) == s})
+            if s != sets[0]:
+                n01, n10, p = mcnemar(y, m[f"pred_{s}"].astype(int).values, m[f"pred_{sets[0]}"].astype(int).values)
+                r.update({"vs_set": sets[0], "right_only_this_set": n01, "right_only_vs_set": n10, "mcnemar_p": p})
             rows.append(r)
-    cols = ["horizon", "feature_set", "n", "accuracy", "balanced_accuracy", "f1_macro", "auc", "vs_previous_set",
-            "right_only_this_set", "right_only_previous", "mcnemar_p"]
+    cols = ["horizon", "feature_set", "inner_val_f1_macro", "deployed", "n", "accuracy", "balanced_accuracy",
+            "f1_macro", "auc", "vs_set", "right_only_this_set", "right_only_vs_set", "mcnemar_p"]
     out = pd.DataFrame(rows)
     return out[[c for c in cols if c in out.columns]]
 
