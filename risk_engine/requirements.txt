@@ -1,0 +1,7 @@
+# cse_risk_engine — pinned versions (tested on Python 3.12, September 2026)
+numpy==2.4.4
+scipy==1.17.1
+pandas==3.0.2
+arch==8.0.0
+pytest==9.1.1
+statsmodels==0.15.0

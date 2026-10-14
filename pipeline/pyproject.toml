@@ -1,0 +1,10 @@
+[project]
+name = "cse-xai-framework"
+version = "0.0.1"
+description = "Explainable ML decision-support framework for the Colombo Stock Exchange (dissertation artifact)"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"

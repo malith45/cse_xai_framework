@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Licensed CSE Data Library files and anything derived at row level must never be committed
+data/
+work/
+dist/
+logs/
+*.xls
+*.xlsx
+*.csv
+*.parquet
+*.sqlite
+news_raw/
+
+# Secrets
+.streamlit/secrets.toml
+.env

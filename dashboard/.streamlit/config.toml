@@ -1,0 +1,18 @@
+[theme]
+base = "dark"
+primaryColor = "#2DD4BF"
+backgroundColor = "#060810"
+secondaryBackgroundColor = "#10141D"
+textColor = "#EEF2F7"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Never show a Python traceback to a participant. Uncaught errors are caught in
+# app.py and rendered as a plain-English panel; this is the safety net behind it.
+showErrorDetails = false

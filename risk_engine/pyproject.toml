@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cse_risk_engine"
+version = "0.1.0"
+description = "Module M6 risk engine: GJR-GARCH(1,1)-t Monte Carlo VaR, stress tests and Kupiec backtest for the Colombo Stock Exchange decision-support framework"
+requires-python = ">=3.10"
+dependencies = ["numpy>=2.0", "scipy>=1.13", "pandas>=2.2", "arch>=7.0"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["cse_risk_engine*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
