@@ -13,7 +13,7 @@ dashboard shows only headline, source, date and link, Chapter 4 §4.7 step 14).
 
 Usage (PowerShell, from this folder):
     python -m pip install requests beautifulsoup4 lxml
-    python news_scraper.py --start 2023-01-01 --end 2025-12-31 --out news_raw
+    python news_scraper.py --start 2020-01-01 --end 2025-12-31 --out news_raw
 Re-running resumes: finished pages and articles are skipped.
 Outputs in --out: adaderana_biz_en.csv, hiru_<lang>_headlines.csv, hiru_<lang>_articles.csv, log.txt
 """
@@ -36,7 +36,7 @@ import requests
 from bs4 import BeautifulSoup
 
 UA = "CSE-Dissertation-NewsCollector/1.0 (academic research, NIBM/Coventry University; non-commercial)"
-DELAY = 1.5  # seconds between requests to the same host
+DELAY = 1.0  # seconds between requests to the same host (Hiru robots.txt sets no crawl-delay)
 TIMEOUT = 30
 
 # Market relevance filter for Hiru headlines. Matched against the English URL slug (Hiru writes an
@@ -226,15 +226,22 @@ def hiru(http: Polite, lang: str, start: str, end: str, out: Path, log, fetch_ar
     hpath = out / f"hiru_{lang}_headlines.csv"
     done_chunks = set()
     state = out / f"hiru_{lang}_state.json"
+
+    def key(chunk: str) -> str:
+        # a chunk is "done" only for the date range it was read with (a chunk that straddles two
+        # ranges, e.g. Dec 2022 / Jan 2023, must be read again for the other range)
+        return f"{chunk}|{start}|{end}"
+
     if state.exists():
-        done_chunks = set(json.load(open(state)))
+        # entries written before ranges were recorded came from the 2023-01-01..2025-12-31 run
+        done_chunks = {x if "|" in x else f"{x}|2023-01-01|2025-12-31" for x in json.load(open(state))}
     newfile = not hpath.exists()
     hf = open(hpath, "a", newline="", encoding="utf-8")
     hw = csv.DictWriter(hf, ["source", "language_hint", "url", "published_at", "title", "relevant"])
     if newfile:
         hw.writeheader()
     for i in range(lo, len(chunks)):
-        if chunks[i] in done_chunks:
+        if key(chunks[i]) in done_chunks:
             continue
         first, last, rows = cache.get(i) or chunk_dates(http, chunks[i])
         if first and first > end:
@@ -246,7 +253,7 @@ def hiru(http: Polite, lang: str, start: str, end: str, out: Path, log, fetch_ar
                              "published_at": x["published_at"], "title": x["title"],
                              "relevant": int(relevant(x["url"], x["title"]))})
         hf.flush()
-        done_chunks.add(chunks[i])
+        done_chunks.add(key(chunks[i]))
         json.dump(sorted(done_chunks), open(state, "w"))
         log(f"Hiru {lang}: chunk {i + 1}/{len(chunks)} {first}..{last}")
     hf.close()
