@@ -23,3 +23,6 @@ news_raw/
 # Secrets
 .streamlit/secrets.toml
 .env
+
+# public macro series (CBSL / DCS) are source data for reproducibility
+!pipeline/data_sources/macro/*.csv

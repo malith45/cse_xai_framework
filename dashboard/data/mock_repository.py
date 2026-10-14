@@ -209,9 +209,15 @@ class MockRepository(Repository):
         p_up = float(np.clip(r.beta(2.2, 2.0), 0.05, 0.95))
         days = 1 if horizon == "t+1" else 5
         target = pd.bdate_range(as_of, periods=days + 1)[-1].date()
-        return {"direction": "up" if p_up >= 0.5 else "down", "p_up": round(p_up, 3),
+        return {"direction": "up" if p_up >= 0.5 else "down", "p_up": round(p_up, 3), "threshold": 0.5,
                 "model": "XGBoost" if r.random() > 0.35 else "GRU",
                 "model_version": self.MODEL_VERSION, "target_date": target}
+
+    def get_signal_reliability(self, horizon: Horizon) -> pd.DataFrame:
+        # synthetic, shaped like the published table (mock mode only)
+        acc = (0.57, 0.59, 0.61, 0.65) if horizon == "t+1" else (0.53, 0.54, 0.54, 0.50)
+        return pd.DataFrame({"min_distance": [0.0, 0.05, 0.10, 0.15], "coverage": [1.0, 0.6, 0.27, 0.1],
+                             "accuracy": list(acc)})
 
     def get_block_accuracy(self, ticker: str, horizon: Horizon) -> pd.DataFrame:
         self._scenario("no_prediction")

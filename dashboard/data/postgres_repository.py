@@ -133,13 +133,19 @@ class PostgresRepository(Repository):
         return self._dates(d, "date")
 
     def get_prediction(self, ticker: str, as_of: date, horizon: Horizon) -> dict:
-        d = self._q("SELECT direction, p_up, model, model_version, target_date FROM prediction "
+        d = self._q("SELECT direction, p_up, threshold, model, model_version, target_date FROM prediction "
                     "WHERE ticker = :t AND as_of = :d AND horizon = :h", t=ticker, d=as_of, h=horizon)
         if d.empty:
             raise NoData("no prediction for this date")
         r = d.iloc[0]
-        return {"direction": r["direction"], "p_up": float(r["p_up"]), "model": r["model"],
+        return {"direction": r["direction"], "p_up": float(r["p_up"]), "threshold": float(r["threshold"]), "model": r["model"],
                 "model_version": r["model_version"], "target_date": pd.to_datetime(r["target_date"]).date()}
+
+    def get_signal_reliability(self, horizon: Horizon) -> pd.DataFrame:
+        if not self._has("signal_reliability"):
+            return super().get_signal_reliability(horizon)
+        return self._q("SELECT min_distance, coverage, accuracy FROM signal_reliability WHERE horizon = :h "
+                       "ORDER BY min_distance", h=horizon)
 
     def get_block_accuracy(self, ticker: str, horizon: Horizon) -> pd.DataFrame:
         d = self._q("SELECT block, test_start, test_end, accuracy, f1, precision, recall, n FROM block_accuracy "

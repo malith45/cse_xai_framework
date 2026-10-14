@@ -66,3 +66,36 @@ def test_labels_are_strictly_future(data):
     for f in FEATURES:
         ok = j[[f, "fwd_ret1"]].dropna()
         assert abs(ok[f].corr(ok["fwd_ret1"])) < 0.5, f
+
+
+# ---------------------------------------------------------------- macro (Chapter 4 §4.7 step 9)
+from pipeline.macro import MACRO, load_macro, macro_features  # noqa: E402
+
+
+@pytest.fixture(scope="module")
+def macro_raw():
+    return load_macro()
+
+
+@pytest.mark.parametrize("cutoff", ["2020-03-17", "2022-04-08", "2023-01-31", "2024-11-27", "2025-12-31"])
+def test_macro_uses_only_values_published_before_the_day(data, macro_raw, cutoff):
+    """Dropping every macro observation dated on or after day T must not change features on day T."""
+    _, ix, _ = data
+    cal = pd.DatetimeIndex(sorted(ix["date"].unique()))
+    t = cal[cal <= pd.Timestamp(cutoff)].max()
+    full = macro_features(cal, macro_raw).loc[t]
+    trunc_raw = {k: v[v["date"] < t].copy() for k, v in macro_raw.items()}
+    trunc = macro_features(cal, trunc_raw).loc[t]
+    pd.testing.assert_series_equal(full, trunc, check_exact=False, rtol=1e-12)
+
+
+def test_policy_change_visible_only_from_next_trading_day(data, macro_raw):
+    _, ix, _ = data
+    cal = pd.DatetimeIndex(sorted(ix["date"].unique()))
+    m = macro_features(cal, macro_raw)
+    assert m.loc["2024-11-27", "policy_rate"] == pytest.approx(8.75)   # OPR announced 27 Nov 2024
+    assert m.loc["2024-11-28", "policy_rate"] == pytest.approx(8.00)
+    # CCPI for a month is not visible on its own last trading day
+    assert m.loc["2022-09-30", "ccpi_yoy"] == pytest.approx(64.3)      # August figure
+    assert m.loc["2022-10-03", "ccpi_yoy"] == pytest.approx(69.8)      # September figure, next month
+    assert m[MACRO].notna().all().all()

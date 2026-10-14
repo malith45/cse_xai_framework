@@ -63,7 +63,10 @@ def main(folder: str):
         alphabet = string.ascii_letters + string.digits
         pw = "".join(secrets.choice(alphabet) for _ in range(32))
         exists = con.execute(sa.text("SELECT 1 FROM pg_roles WHERE rolname = 'dashboard_ro'")).scalar()
-        if exists:
+        reset = os.environ.get("RESET_READONLY_PASSWORD") == "1"
+        if exists and not reset:
+            pw = None   # keep the existing password: the Streamlit secret stays valid
+        elif exists:
             con.execute(sa.text(f"ALTER ROLE dashboard_ro WITH LOGIN PASSWORD '{pw}'"))
         else:
             con.execute(sa.text(f"CREATE ROLE dashboard_ro LOGIN PASSWORD '{pw}'"))
@@ -72,6 +75,10 @@ def main(folder: str):
         con.execute(sa.text("GRANT USAGE ON SCHEMA public TO dashboard_ro"))
         con.execute(sa.text("GRANT SELECT ON ALL TABLES IN SCHEMA public TO dashboard_ro"))
         con.execute(sa.text("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO dashboard_ro"))
+    if pw is None:
+        print("\nAll tables loaded. The read-only login dashboard_ro already existed, so its password is unchanged")
+        print("and your Streamlit secret still works. (To issue a new one: set RESET_READONLY_PASSWORD=1 and re-run.)")
+        return
     parts = urlsplit(url)
     host = parts.hostname + (f":{parts.port}" if parts.port else "")
     ro = urlunsplit((parts.scheme.replace("+psycopg", ""), f"dashboard_ro:{pw}@{host}", parts.path, parts.query, ""))

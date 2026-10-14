@@ -103,8 +103,12 @@ def market_features(indices: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def build_panel(prices: pd.DataFrame, indices: pd.DataFrame, securities: list[str] | None = None) -> tuple[pd.DataFrame, dict]:
-    """Return the point-in-time feature matrix with labels y1, y5 and a label-exclusion report."""
+def build_panel(prices: pd.DataFrame, indices: pd.DataFrame, securities: list[str] | None = None,
+                macro: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
+    """Return the point-in-time feature matrix with labels y1, y5 and a label-exclusion report.
+
+    ``macro`` (optional) is the table from ``pipeline.macro.macro_features`` indexed by trading date;
+    its columns are merged on the date (they are market-wide, identical for every security)."""
     cal = pd.DatetimeIndex(sorted(indices["date"].unique()))
     cal_pos = pd.Series(np.arange(len(cal)), index=cal)
     p = prices if securities is None else prices[prices["security_id"].isin(securities)]
@@ -118,6 +122,8 @@ def build_panel(prices: pd.DataFrame, indices: pd.DataFrame, securities: list[st
     mk = market_features(indices)
     panel = panel.merge(mk, left_on="date", right_index=True, how="left")
     panel["rel_ret5"] = panel["roc5"].pipe(np.log1p) - panel["sl20_ret5"]
+    if macro is not None:
+        panel = panel.merge(macro, left_on="date", right_index=True, how="left")
 
     # labels on the market calendar
     panel["cal_pos"] = panel["date"].map(cal_pos).astype(int)
@@ -139,4 +145,11 @@ def build_panel(prices: pd.DataFrame, indices: pd.DataFrame, securities: list[st
     return panel.sort_values(["date", "security_id"]).reset_index(drop=True), report
 
 
-FEATURES = TECHNICAL + RETURNS_VOL + MARKET
+from pipeline.macro import MACRO  # noqa: E402
+
+FEATURES_PRICES = TECHNICAL + RETURNS_VOL + MARKET          # 35 price/volume/index features (first run)
+FEATURE_SETS = {
+    "prices": FEATURES_PRICES,
+    "macro": FEATURES_PRICES + MACRO,                       # + 7 CBSL/DCS macro features (2026-10-14)
+}
+FEATURES = FEATURES_PRICES  # default kept for backward compatibility; scripts select a set explicitly

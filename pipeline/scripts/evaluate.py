@@ -43,6 +43,41 @@ def mcnemar(y, a, b) -> tuple[int, int, float]:
     return n01, n10, p
 
 
+ABLATION_ORDER = ["prices", "macro", "full"]
+
+
+def feature_ablation() -> pd.DataFrame:
+    """XGBoost with each feature set (work/results/ablation/<set>/), on the rows every set predicted.
+
+    McNemar's exact test compares each set with the previous one (does adding the group change which
+    calls are right?)."""
+    sets = [s for s in ABLATION_ORDER if (RES / "ablation" / s / "xgb_predictions.parquet").exists()]
+    if len(sets) < 2:
+        return pd.DataFrame()
+    pr = {s: pd.read_parquet(RES / "ablation" / s / "xgb_predictions.parquet") for s in sets}
+    rows = []
+    for hz in ("t1", "t5"):
+        key = ["security_id", "date"]
+        m = None
+        for s in sets:
+            d = pr[s][(pr[s]["horizon"] == hz) & pr[s]["label"].notna()][key + ["label", "pred", "p_up"]]
+            d = d.rename(columns={"pred": f"pred_{s}", "p_up": f"p_{s}"})
+            m = d if m is None else m.merge(d.drop(columns="label"), on=key, how="inner")
+        y = m["label"].astype(int).values
+        for i, s in enumerate(sets):
+            r = metrics(y, m[f"pred_{s}"].astype(int).values, m[f"p_{s}"].values)
+            r.update({"horizon": hz, "feature_set": s})
+            if i:
+                n01, n10, p = mcnemar(y, m[f"pred_{s}"].astype(int).values, m[f"pred_{sets[i - 1]}"].astype(int).values)
+                r.update({"vs_previous_set": sets[i - 1], "right_only_this_set": n01, "right_only_previous": n10,
+                          "mcnemar_p": p})
+            rows.append(r)
+    cols = ["horizon", "feature_set", "n", "accuracy", "balanced_accuracy", "f1_macro", "auc", "vs_previous_set",
+            "right_only_this_set", "right_only_previous", "mcnemar_p"]
+    out = pd.DataFrame(rows)
+    return out[[c for c in cols if c in out.columns]]
+
+
 def main():
     frames = []
     for f in ("xgb_predictions.parquet", "rnn_predictions.parquet"):
@@ -129,8 +164,11 @@ def main():
             conf_rows.append({"model": m, "horizon": hz, "min_distance_from_threshold": q,
                               "coverage": len(s_) / len(g), "n": len(s_),
                               "accuracy": float((s_["pred"] == s_["label"]).mean()) if len(s_) else np.nan})
+    ablation = feature_ablation()
     with pd.ExcelWriter(RES / "evaluation.xlsx") as xw:
         pd.DataFrame(conf_rows).to_excel(xw, sheet_name="Accuracy by confidence", index=False)
+        if len(ablation):
+            ablation.to_excel(xw, sheet_name="Feature ablation (XGB)", index=False)
         overall.sort_values(["horizon", "f1_macro"], ascending=[True, False]).to_excel(xw, sheet_name="Overall", index=False)
         by_block.to_excel(xw, sheet_name="By block", index=False)
         by_stock.to_excel(xw, sheet_name="By stock", index=False)
@@ -139,6 +177,8 @@ def main():
             kup.to_excel(xw, sheet_name="Kupiec", index=False)
         if len(gsum):
             gsum.to_excel(xw, sheet_name="SHAP global (XGB)", index=False)
+    if len(ablation):
+        print(ablation.round(4).to_string(index=False))
     cols = ["model", "horizon", "n", "accuracy", "balanced_accuracy", "f1_macro", "auc", "binom_p_vs_50pct"]
     print(overall[cols].sort_values(["horizon", "f1_macro"], ascending=[True, False]).round(4).to_string(index=False))
     if len(tests):

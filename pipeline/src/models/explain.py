@@ -30,6 +30,10 @@ LABELS = {
     "sl20_ret5": "S&P SL20 change over 5 days", "aspi_rv20": "market volatility (20 days)",
     "aspi_close_sma50": "ASPI vs its 50-day average", "rel_ret5": "5-day return relative to the S&P SL20",
     "stock": "company identity (its own history)",
+    "usd_lkr_chg5": "rupee vs US dollar, 5-day change", "usd_lkr_chg20": "rupee vs US dollar, 20-day change",
+    "policy_rate": "Central Bank policy rate", "awpr": "prime lending rate (AWPR)",
+    "tbill_91d": "3-month Treasury bill yield", "tbill_spread_364_91": "1-year minus 3-month T-bill yield",
+    "ccpi_yoy": "inflation (Colombo CPI, year on year)",
 }
 
 

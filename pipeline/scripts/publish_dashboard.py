@@ -24,7 +24,7 @@ from models.universe import load_universe  # noqa: E402
 WORK, RES = ROOT / "work", ROOT / "work" / "results"
 OUT = ROOT / "dist" / "db"
 HZ = {"t1": "t+1", "t5": "t+5"}
-MODEL_VERSION = "xgb-wf-v1"
+MODEL_VERSION = "xgb-wf-v2"   # v2: feature set chosen per horizon on inner validation (feature_selection.json)
 
 
 def ticker(sid: str) -> str:
@@ -81,7 +81,8 @@ def main():
         "ticker": xp["security_id"].map(ticker), "as_of": xp["date"], "horizon": xp["horizon"].map(HZ),
         "model": "XGBoost", "p_up": xp["p_up"].round(4), "threshold": xp["threshold"].round(4),
         "direction": np.where(xp["pred"] == 1, "up", "down"), "target_date": xp["target_date"],
-        "model_version": MODEL_VERSION, "block": xp["block"], "narrative": xp["narrative"]})
+        "model_version": (MODEL_VERSION + "-" + xp["feature_set"]) if "feature_set" in xp else MODEL_VERSION,
+        "block": xp["block"], "narrative": xp["narrative"]})
     sh = pd.read_parquet(RES / "xgb_shap_top10.parquet")
     tables["shap_contribution"] = pd.DataFrame({
         "ticker": sh["security_id"].map(ticker), "as_of": sh["date"], "horizon": sh["horizon"].map(HZ),
@@ -151,6 +152,15 @@ def main():
             f = RES / f"{name}.parquet"
             if f.exists():
                 tables[name] = pd.read_parquet(f)
+
+    # how reliable calls are by distance from the cut-off (out-of-sample, from evaluate.py)
+    ev = RES / "evaluation.xlsx"
+    if ev.exists():
+        c = pd.read_excel(ev, sheet_name="Accuracy by confidence")
+        c = c[c["model"] == "xgboost"]
+        tables["signal_reliability"] = pd.DataFrame({"horizon": c["horizon"].map(HZ),
+                                                     "min_distance": c["min_distance_from_threshold"].round(2),
+                                                     "coverage": c["coverage"].round(4), "accuracy": c["accuracy"].round(4)})
 
     as_of = xp["date"].max()
     tables["data_status"] = pd.DataFrame([{"as_of": as_of, "source": "CSE Data Library 2020-2025 (adjusted)",

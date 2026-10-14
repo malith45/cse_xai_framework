@@ -46,6 +46,11 @@ def main():
     parts = out / "parts"
     parts.mkdir(parents=True, exist_ok=True)
     panel = pd.read_parquet(Path(a.data) / "panel_universe.parquet")
+    global FEATURES
+    if (Path(a.data) / "features.json").exists():
+        import json as _json
+        FEATURES = _json.load(open(Path(a.data) / "features.json"))
+    print(f"features: {len(FEATURES)}", flush=True)
     names = panel.groupby("security_id")["short_name"].last() if "short_name" in panel else {}
     n_days = int(panel["n_calendar_days"].iloc[0]) if "n_calendar_days" in panel else int(panel["cal_pos"].max()) + 1
     blocks = make_blocks(n_days)

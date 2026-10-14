@@ -1,8 +1,9 @@
 """Run M4 (XGBoost + baselines) and M5 (TreeSHAP + narratives) over every walk-forward block.
 
-Usage: python scripts/run_xgb_baselines.py [--trials 30] [--skip-baselines]
-Outputs (work/results/): xgb_predictions.parquet, xgb_shap_top10.parquet, xgb_shap_global.parquet,
-baseline_predictions.parquet, registry_xgb.json
+Usage: python scripts/run_xgb_baselines.py [--feature-set prices|macro] [--deploy] [--trials 30] [--skip-baselines]
+Outputs: work/results/ablation/<feature-set>/ xgb_predictions.parquet, xgb_shap_top10.parquet,
+xgb_shap_global.parquet, registry_xgb.json; with --deploy the same files are also copied to
+work/results/ (the model the dashboard publishes). Baselines: work/results/baseline_predictions.parquet.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from models.baselines import model_baseline, naive  # noqa: E402
 from models.explain import narrative, top_k_long, tree_shap  # noqa: E402
 from models.walkforward import in_range, make_blocks, predict_xgb, train_xgb_block  # noqa: E402
 from models.universe import load_universe, load_universe_full  # noqa: E402
-from pipeline.features import FEATURES  # noqa: E402
+from pipeline.features import FEATURE_SETS  # noqa: E402
 
 OUT = ROOT / "work" / "results"
 
@@ -33,8 +34,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=C.XGB_TRIALS)
     ap.add_argument("--skip-baselines", action="store_true")
+    ap.add_argument("--feature-set", default="macro", choices=sorted(FEATURE_SETS))
+    ap.add_argument("--deploy", action="store_true", help="also write the outputs the dashboard publishes")
     a = ap.parse_args()
+    FEATURES = FEATURE_SETS[a.feature_set]
     OUT.mkdir(parents=True, exist_ok=True)
+    AB = OUT / "ablation" / a.feature_set
+    AB.mkdir(parents=True, exist_ok=True)
 
     panel_all = pd.read_parquet(ROOT / "work" / "panel_all.parquet")
     panel, uni_info = load_universe(panel_all)
@@ -45,7 +51,7 @@ def main():
     print(f"universe: {uni_info}; blocks: {len(blocks)}; rows: {len(panel)}", flush=True)
 
     preds, shap_rows, glob, registry = [], [], [], []
-    parts = OUT / "xgb_parts"
+    parts = OUT / f"xgb_parts_{a.feature_set}"
     parts.mkdir(exist_ok=True)
     for hz, label in C.HORIZONS.items():
         for blk in blocks:
@@ -82,7 +88,7 @@ def main():
                 narr.append(narrative(str(names.get(sid, sid)).title(), float(pu), hz, t))
             p["narrative"] = narr
             preds.append(p)
-            registry.append({"model": "xgboost", "horizon": hz, "block": blk.b, "train": blk.train,
+            registry.append({"model": "xgboost", "feature_set": a.feature_set, "n_features": len(FEATURES), "horizon": hz, "block": blk.b, "train": blk.train,
                              "inner_val": blk.inner_val, "test": blk.test, "threshold": res.threshold,
                              "inner_val_f1_macro": res.inner_val_score, "params": res.params,
                              "n_train_rows": int((in_range(panel["cal_pos"], blk.train) & panel[label].notna()).sum()),
@@ -93,10 +99,11 @@ def main():
             json.dump(registry[-1], open(parts / f"{tag}_reg.json", "w"), default=str)
             print(f"xgb {hz} block {blk.b}: inner-val F1m={res.inner_val_score:.3f} thr={res.threshold:.3f} "
                   f"({time.time() - t0:.0f}s)", flush=True)
-    pd.concat(preds).to_parquet(OUT / "xgb_predictions.parquet")
-    pd.concat(shap_rows).to_parquet(OUT / "xgb_shap_top10.parquet")
-    pd.concat(glob).to_parquet(OUT / "xgb_shap_global.parquet")
-    json.dump(registry, open(OUT / "registry_xgb.json", "w"), indent=1, default=str)
+    for d in ([AB, OUT] if a.deploy else [AB]):
+        pd.concat(preds).assign(feature_set=a.feature_set).to_parquet(d / "xgb_predictions.parquet")
+        pd.concat(shap_rows).to_parquet(d / "xgb_shap_top10.parquet")
+        pd.concat(glob).to_parquet(d / "xgb_shap_global.parquet")
+        json.dump(registry, open(d / "registry_xgb.json", "w"), indent=1, default=str)
 
     if a.skip_baselines:
         return

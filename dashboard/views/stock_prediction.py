@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from data.repository import get_repository
+from services.signal import cutoff_note, headline, reliability_sentence, strength, strength_supported
 from ui.charts import CONFIG
 from ui.layout import (DOWN, MUTED, UP, card, chart_caption, footer, page_header, responsive_table, section,
                        selection, window)
@@ -27,16 +28,16 @@ if p1 is None or p5 is None:
     footer()
     st.stop()
 
+rel = {h: try_fetch(repo.get_signal_reliability, h) for h in ("t+1", "t+5")}
 c1, c2, c3, c4 = st.columns(4)
-for col, p, label in ((c1, p1, "Next day (t+1)"), (c2, p5, "Five days (t+5)")):
+for col, p, label, h in ((c1, p1, "Next day (t+1)", "t+1"), (c2, p5, "Five days (t+5)", "t+5")):
     with col:
-        arrow = "▲ Up" if p["direction"] == "up" else "▼ Down"
-        card(label, arrow, f"predicted direction · target {p['target_date']:%d %b}",
-             "up" if p["direction"] == "up" else "down")
+        big, small = headline(p["direction"], p["p_up"], p.get("threshold"), strength_supported(rel[h]))
+        tone = "" if strength(p["p_up"], p.get("threshold")) == "weak" else ("up" if p["direction"] == "up" else "down")
+        card(label, big, f"{small} · target {p['target_date']:%d %b}", tone)
 active = p1 if horizon == "t+1" else p5
 with c3:
-    card(f"P(up) · {horizon}", f"{active['p_up']*100:.0f}%",
-         "near 50% = weak evidence" if abs(active["p_up"] - 0.5) < 0.1 else "chance the price rises")
+    card(f"P(up) · {horizon}", f"{active['p_up']*100:.0f}%", cutoff_note(active.get("threshold")))
 with c4:
     card("Model", active["model"], active["model_version"])
 
@@ -73,7 +74,11 @@ else:
     chart_caption(
         f"Daily price candles for {name} over the last 120 trading days, closing at Rs {last_close:,.2f} on "
         f"{as_of:%d %B}. The dashed line and {arrow} marker show the model's call for {active['target_date']:%d %B}: "
-        f"{'up' if active['direction'] == 'up' else 'down'}, with a {active['p_up']:.0%} chance of a rise.")
+        f"{'up' if active['direction'] == 'up' else 'down'}, with a {active['p_up']:.0%} chance of a rise "
+        f"({cutoff_note(active.get('threshold'))}).")
+st.caption("How to read the signal: the model calls 'up' once P(up) reaches its own cut-off, which is tuned on past "
+           "data and is not always 50%. Calls within 5 points of the cut-off are shown as 'Unclear' (with the side they lean to). "
+           + reliability_sentence(rel[horizon], horizon))
 
 st.page_link("views/explainability.py", label="Why this prediction? See which signals drove it",
              icon=":material/psychology:")

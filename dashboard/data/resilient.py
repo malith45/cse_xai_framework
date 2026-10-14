@@ -142,6 +142,9 @@ class ResilientRepository(Repository):
     def get_block_accuracy(self, ticker: str, horizon: Horizon) -> pd.DataFrame:
         return self._get("get_block_accuracy", ticker, horizon)
 
+    def get_signal_reliability(self, horizon: Horizon) -> pd.DataFrame:
+        return self._get("get_signal_reliability", horizon)
+
     # ----- explainability -------------------------------------------------
     def get_global_importance(self, horizon: Horizon) -> pd.DataFrame:
         return self._get("get_global_importance", horizon)

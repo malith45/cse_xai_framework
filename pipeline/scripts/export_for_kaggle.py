@@ -1,6 +1,11 @@
 """Write the universe panel (derived features + labels only; no raw licensed price rows) and the
-code needed by scripts/run_rnn.py into dist/kaggle/ for upload as a PRIVATE Kaggle dataset."""
+code needed by scripts/run_rnn.py into dist/kaggle/ for upload as a PRIVATE Kaggle dataset.
 
+Usage: python scripts/export_for_kaggle.py [--feature-set prices|macro|full]
+The chosen feature list is written to features.json beside the panel; run_rnn.py reads it."""
+
+import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -10,7 +15,11 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from models.universe import load_universe, load_universe_full  # noqa: E402
-from pipeline.features import FEATURES  # noqa: E402
+from pipeline.features import FEATURE_SETS  # noqa: E402
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--feature-set", default="full" if "full" in FEATURE_SETS else "macro", choices=sorted(FEATURE_SETS))
+FEATURES = FEATURE_SETS[ap.parse_args().feature_set]
 
 dst = ROOT / "dist" / "kaggle" / "rnn_input"
 if dst.exists():
@@ -25,6 +34,7 @@ out = panel[keep].copy()
 out["short_name"] = out["security_id"].map(names)
 out["n_calendar_days"] = int(pa["cal_pos"].max()) + 1
 out.to_parquet(dst / "panel_universe.parquet")
+json.dump(FEATURES, open(dst / "features.json", "w"))
 for d in ("src/models", "src/pipeline"):
     shutil.copytree(ROOT / d, dst / "code" / d, ignore=shutil.ignore_patterns("__pycache__"))
 (dst / "code" / "scripts").mkdir()

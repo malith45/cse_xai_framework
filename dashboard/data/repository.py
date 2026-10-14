@@ -58,8 +58,13 @@ class Repository(ABC):
 
     @abstractmethod
     def get_prediction(self, ticker: str, as_of: date, horizon: Horizon) -> dict:
-        """{'direction': 'up'|'down', 'p_up': float, 'model': str,
-            'model_version': str, 'target_date': date}"""
+        """{'direction': 'up'|'down', 'p_up': float, 'threshold': float (the model's cut-off for "up"),
+            'model': str, 'model_version': str, 'target_date': date}"""
+
+    def get_signal_reliability(self, horizon: Horizon) -> pd.DataFrame:
+        """Out-of-sample accuracy by distance from the model's cut-off.
+        Columns: min_distance (0, 0.05, 0.10, 0.15), coverage, accuracy. Empty when not published."""
+        return pd.DataFrame(columns=["min_distance", "coverage", "accuracy"])
 
     @abstractmethod
     def get_block_accuracy(self, ticker: str, horizon: Horizon) -> pd.DataFrame:
