@@ -120,6 +120,10 @@ def transfer_data() -> pd.DataFrame:
     import gdown
     for fid, name in [("1e9xRaKoK3wgulCj7uF1mSblV2UB4D95B", "lankadeepa.csv"), ("1Y24oCg0oWINSo5Om7cJWBy9f03cMjGzX", "gossiplanka.csv")]:
         p = Path("/kaggle/working") / name
+        # a copy uploaded as a Kaggle dataset (Google Drive often refuses automated downloads) wins
+        local = [f for f in Path("/kaggle/input").rglob("*.csv") if f.stem.lower().startswith(name.split(".")[0])]
+        if local:
+            p = local[0]
         try:
             if not p.exists():
                 gdown.download(id=fid, output=str(p), quiet=True)
