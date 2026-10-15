@@ -76,8 +76,26 @@ def load_articles(news: Path) -> pd.DataFrame:
     return arts
 
 
+class _NumpyCompat:
+    """fasttext 0.9.x calls np.array(..., copy=False), which NumPy 2 rejects. Route that call to
+    np.asarray (same behaviour as NumPy 1) and pass everything else through."""
+
+    def __getattr__(self, name):
+        return getattr(np, name)
+
+    @staticmethod
+    def array(obj, *args, copy=None, **kw):
+        return np.asarray(obj) if copy is False else np.array(obj, *args, **kw)
+
+
 def route_language(arts: pd.DataFrame) -> pd.Series:
-    import fasttext
+    try:
+        import fasttext
+    except ImportError:
+        sh("pip -q install fasttext-wheel")
+        import fasttext
+    import fasttext.FastText as _ft
+    _ft.np = _NumpyCompat()
     model_path = Path("/kaggle/working/lid.176.ftz")
     if not model_path.exists():
         sh(f"wget -q -O {model_path} https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz")
@@ -248,7 +266,7 @@ def main():
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    sh("pip -q install fasttext-wheel sentencepiece")
+    sh("pip -q install sentencepiece")   # fasttext is preinstalled on Kaggle; installed on demand otherwise
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer
 
