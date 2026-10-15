@@ -115,26 +115,8 @@ def route_language(arts: pd.DataFrame) -> pd.Series:
 
 def transfer_data() -> pd.DataFrame:
     rows = []
-    # Senevirathne et al. (2020): Lankadeepa + GossipLanka comments (Google Drive links in the paper repo)
-    sh("pip -q install gdown")
-    import gdown
-    for fid, name in [("1e9xRaKoK3wgulCj7uF1mSblV2UB4D95B", "lankadeepa.csv"), ("1Y24oCg0oWINSo5Om7cJWBy9f03cMjGzX", "gossiplanka.csv")]:
-        p = Path("/kaggle/working") / name
-        # a copy uploaded as a Kaggle dataset (Google Drive often refuses automated downloads) wins
-        local = [f for f in Path("/kaggle/input").rglob("*.csv") if f.stem.lower().startswith(name.split(".")[0])]
-        if local:
-            p = local[0]
-        try:
-            if not p.exists():
-                gdown.download(id=fid, output=str(p), quiet=True)
-            d = pd.read_csv(p, encoding="utf-8", on_bad_lines="skip")
-            text_col = max((c for c in d.columns if d[c].dtype == object), key=lambda c: d[c].astype(str).str.len().mean())
-            lab_col = next(c for c in d.columns if set(d[c].astype(str).str.upper().unique()) & {"POSITIVE", "NEGATIVE", "NEUTRAL"})
-            m = {"POSITIVE": "positive", "NEGATIVE": "negative", "NEUTRAL": "neutral"}
-            lab = d[lab_col].astype(str).str.upper().map(m)
-            rows.append(pd.DataFrame({"text": d[text_col].astype(str), "label": lab, "source": "senevirathne_si"}).dropna())
-        except Exception as e:  # noqa: BLE001
-            print("Sinhala corpus failed:", name, e, flush=True)
+    # Senevirathne et al. (2020) Sinhala corpus: no longer downloadable (Drive files return 404, Oct 2026).
+    # Author's decision 2026-10-16: Sinhala articles are translated with NLLB-200 and scored by FinBERT.
     # DravidianCodeMix Tamil-English
     try:
         if not Path("/kaggle/working/dcm").exists():
@@ -185,7 +167,7 @@ def transfer_data() -> pd.DataFrame:
     data = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["text", "label", "source"])
     data = data[data["text"].astype(str).str.strip().str.len() > 3]
     have = set(data["source"].unique())
-    need = {"senevirathne_si", "dravidiancodemix_ta", "phrasebank_en"}
+    need = {"dravidiancodemix_ta", "phrasebank_en"}
     if need - have:   # stop before any GPU time is spent rather than train a model without one language
         raise SystemExit(f"transfer corpus missing: {sorted(need - have)} - send this message to Claude")
     # cap each source at 12,000 rows so no single corpus dominates
@@ -307,7 +289,8 @@ def main():
     arts["score_primary"] = arts["p_pos"] - arts["p_neg"]
 
     # NLLB fallback for low-confidence Sinhala/Tamil articles
-    low = arts["lang"].isin(["si", "ta"]) & (arts[["p_neg", "p_neu", "p_pos"]].max(axis=1) < FALLBACK_THRESHOLD)
+    # Sinhala: always translated (no Sinhala training corpus, see transfer_data); Tamil: fallback below 0.60
+    low = (arts["lang"] == "si") | ((arts["lang"] == "ta") & (arts[["p_neg", "p_neu", "p_pos"]].max(axis=1) < FALLBACK_THRESHOLD))
     arts["translation_en"], arts["score_secondary"] = "", np.nan
     print("fallback articles:", int(low.sum()), flush=True)
     if low.any():
