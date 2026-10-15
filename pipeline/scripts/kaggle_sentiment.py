@@ -117,22 +117,55 @@ def transfer_data() -> pd.DataFrame:
     try:
         if not Path("/kaggle/working/dcm").exists():
             sh("git clone -q --depth 1 https://github.com/bharathichezhiyan/DravidianCodeMix-Dataset /kaggle/working/dcm")
-        d = pd.read_csv("/kaggle/working/dcm/programs/tamil_sentiment_full.csv", header=None, names=["label", "text"], on_bad_lines="skip")
-        m = {"Positive": "positive", "Negative": "negative", "unknown_state": "neutral"}
-        d["label"] = d["label"].map(m)
+        import csv
+        # the file is TAB-separated (label<TAB>text); read as comma-separated it yields no usable rows
+        d = pd.read_csv("/kaggle/working/dcm/programs/tamil_sentiment_full.csv", sep="\t", header=None,
+                        names=["label", "text"], on_bad_lines="skip", quoting=csv.QUOTE_NONE, dtype=str)
+        m = {"Positive": "positive", "Negative": "negative", "unknown_state": "neutral"}   # Mixed_feelings, not-Tamil dropped
+        d["label"] = d["label"].str.strip().map(m)
         rows.append(d.dropna().assign(source="dravidiancodemix_ta"))
     except Exception as e:  # noqa: BLE001
         print("Tamil corpus failed:", e, flush=True)
-    # Financial PhraseBank
+    # Financial PhraseBank (Malo et al., 2014), 50%-agreement sentences. Newer `datasets` releases no longer
+    # run loading scripts, so fall back to the original zip / the parquet conversion on the Hub.
+    fp = None
     try:
         from datasets import load_dataset
         fp = load_dataset("takala/financial_phrasebank", "sentences_50agree", trust_remote_code=True)["train"].to_pandas()
         fp["label"] = fp["label"].map({0: "negative", 1: "neutral", 2: "positive"})
-        rows.append(fp.rename(columns={"sentence": "text"}).assign(source="phrasebank_en"))
+        fp = fp.rename(columns={"sentence": "text"})
     except Exception as e:  # noqa: BLE001
-        print("PhraseBank failed:", e, flush=True)
-    data = pd.concat(rows, ignore_index=True)
-    data = data[data["text"].str.len() > 3]
+        print("PhraseBank via datasets failed:", e, flush=True)
+    if fp is None:
+        try:
+            import io
+            import urllib.request
+            import zipfile
+            url = "https://huggingface.co/datasets/takala/financial_phrasebank/resolve/main/data/FinancialPhraseBank-v1.0.zip"
+            z = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url, timeout=120).read()))
+            name = next(n for n in z.namelist() if n.endswith("Sentences_50Agree.txt"))
+            lines = z.read(name).decode("latin-1").splitlines()
+            pairs = [ln.rsplit("@", 1) for ln in lines if "@" in ln]
+            fp = pd.DataFrame(pairs, columns=["text", "label"])
+            fp["label"] = fp["label"].str.strip()
+        except Exception as e:  # noqa: BLE001
+            print("PhraseBank zip failed:", e, flush=True)
+    if fp is None:
+        try:
+            fp = pd.read_parquet("https://huggingface.co/datasets/takala/financial_phrasebank/resolve/"
+                                 "refs%2Fconvert%2Fparquet/sentences_50agree/train/0000.parquet")
+            fp["label"] = fp["label"].map({0: "negative", 1: "neutral", 2: "positive"})
+            fp = fp.rename(columns={"sentence": "text"})
+        except Exception as e:  # noqa: BLE001
+            print("PhraseBank parquet failed:", e, flush=True)
+    if fp is not None:
+        rows.append(fp[["text", "label"]].dropna().assign(source="phrasebank_en"))
+    data = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["text", "label", "source"])
+    data = data[data["text"].astype(str).str.strip().str.len() > 3]
+    have = set(data["source"].unique())
+    need = {"senevirathne_si", "dravidiancodemix_ta", "phrasebank_en"}
+    if need - have:   # stop before any GPU time is spent rather than train a model without one language
+        raise SystemExit(f"transfer corpus missing: {sorted(need - have)} - send this message to Claude")
     # cap each source at 12,000 rows so no single corpus dominates
     data = data.groupby("source", group_keys=False).apply(lambda g: g.sample(min(len(g), 12000), random_state=SEED))
     print(data.groupby(["source", "label"]).size(), flush=True)
@@ -219,6 +252,7 @@ def main():
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer
 
+    transfer = transfer_data()            # first: fail fast (before GPU work) if a training corpus is missing
     arts = load_articles(Path(a.news))
     arts["lang"] = route_language(arts)
     print(arts["lang"].value_counts(), flush=True)
@@ -240,7 +274,7 @@ def main():
         arts.loc[en, "model"] = "finbert"
 
     # Sinhala / Tamil / code-mixed: fine-tuned XLM-R
-    tok, xlmr = finetune_xlmr(transfer_data(), out)
+    tok, xlmr = finetune_xlmr(transfer, out)
     if a.save_model:
         xlmr.save_pretrained(out / "xlmr_model")
         tok.save_pretrained(out / "xlmr_model")
