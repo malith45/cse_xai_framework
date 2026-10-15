@@ -39,7 +39,10 @@ GUIDE = [
 
 def load(src: Path) -> pd.DataFrame:
     """Scraped articles (news_scraper.py output folder); only items with fetched text are sampled."""
-    frames = [pd.read_csv(f, dtype=str) for f in src.rglob("*.csv") if "headlines" not in f.name]
+    # article files only (not headline lists, not the *_refetched.csv side files whose bodies are
+    # already merged into hiru_<lang>_articles.csv)
+    files = sorted(f for f in src.rglob("*.csv") if f.name.startswith("adaderana") or f.name.endswith("_articles.csv"))
+    frames = [pd.read_csv(f, dtype=str) for f in files]
     d = pd.concat(frames, ignore_index=True).drop_duplicates("url")
     d["lang_group"] = d["language_hint"].map({"en": "en", "english": "en", "sinhala": "si", "tamil": "ta"})
     return d

@@ -37,11 +37,38 @@ def _copy_insert(table, conn, keys, data_iter):
                 cp.write_row(row)
 
 
+def _clean(raw: str) -> str:
+    """Drop invisible characters a console paste can add (e.g. Ctrl+V captured as \\x16), spaces, line
+    breaks, surrounding quotes, and a leading "psql" from the Neon console snippet."""
+    url = "".join(ch for ch in (raw or "") if ch.isprintable() and not ch.isspace())
+    return url.removeprefix("psql").strip("'\"")
+
+
+def _from_clipboard() -> str:
+    """Windows: read the connection string the user copied (Neon console -> Copy), then clear the clipboard."""
+    if os.name != "nt":
+        return ""
+    import subprocess
+    try:
+        clip = subprocess.run(["powershell", "-NoProfile", "-Command", "Get-Clipboard -Raw"],
+                              capture_output=True, text=True, timeout=30).stdout
+    except Exception:  # noqa: BLE001
+        return ""
+    url = _clean(clip)
+    if url.startswith(("postgres://", "postgresql://")):
+        subprocess.run("echo off| clip", shell=True)   # do not leave the password on the clipboard
+        return url
+    return ""
+
+
 def main(folder: str):
-    url = os.environ.get("ADMIN_DATABASE_URL") or getpass.getpass("Paste the Neon connection string (hidden) and press Enter: ").strip()
-    # drop invisible characters a console paste can add (e.g. Ctrl+V captured as \x16), spaces and line breaks
-    url = "".join(ch for ch in url if ch.isprintable() and not ch.isspace())
-    url = url.removeprefix("psql").strip("'\"")  # accept the console's "psql '...'" snippet too
+    url = _clean(os.environ.get("ADMIN_DATABASE_URL", "")) or _from_clipboard()
+    if url:
+        print(f"Using the connection string from your clipboard (database host {urlsplit(url).hostname}).")
+    else:
+        print("No connection string found on the clipboard. In Neon, click Copy next to the connection string,")
+        print("then come back here. Or paste it once below (right-click) and press Enter.")
+        url = _clean(getpass.getpass("Connection string (hidden): "))
     if not url.startswith(("postgres://", "postgresql://")):
         sys.exit("That does not look like a Postgres connection string (it should start with postgresql://).")
     if url.startswith("postgres://"):
