@@ -18,8 +18,6 @@ import streamlit as st
 APP_TITLE = "CSE Decision Support"
 APP_ICON = "◆"
 
-# Placeholder — replace with the real evaluation questionnaire link.
-QUESTIONNAIRE_URL = "https://forms.gle/REPLACE-WITH-QUESTIONNAIRE"
 
 DISCLAIMER = (
     "Research prototype for decision support only. Not financial advice. "
@@ -53,6 +51,10 @@ def _setting(key: str, default: str) -> str:
     except Exception:  # secrets unavailable (bare mode / malformed file)
         pass
     return os.getenv(key, default)
+
+
+# Evaluation questionnaire link: set QUESTIONNAIRE_URL in Streamlit secrets (no code change needed).
+QUESTIONNAIRE_URL = _setting("QUESTIONNAIRE_URL", "https://forms.gle/REPLACE-WITH-QUESTIONNAIRE")
 
 
 def data_source() -> str:
