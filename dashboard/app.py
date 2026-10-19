@@ -15,6 +15,7 @@ import streamlit as st
 from config import APP_ICON, APP_TITLE
 from services.perf import start_page
 from ui.auth import require_passcode
+from ui.charts import apply_chart_theme
 from ui.layout import inject_css, nav_active_css, sidebar_controls
 from ui.states import run_guarded, warm_up
 
@@ -22,7 +23,20 @@ from ui.states import run_guarded, warm_up
 # open as a full-screen overlay and hide the page on first load).
 st.set_page_config(page_title=APP_TITLE, page_icon=APP_ICON, layout="wide",
                    initial_sidebar_state="auto")
+st.session_state.setdefault("theme", "dark")
 inject_css()
+
+with st.container(key="theme-bar"):
+    _, theme_column = st.columns([0.84, 0.16], vertical_alignment="center")
+    with theme_column:
+        st.segmented_control(
+            "Appearance",
+            options=["dark", "light"],
+            format_func=lambda value: "☾ Dark" if value == "dark" else "☀ Light",
+            key="theme",
+            label_visibility="collapsed",
+        )
+apply_chart_theme(st.session_state.get("theme", "dark"))
 
 pages = [
     st.Page("views/market_overview.py", title="Market overview", icon=":material/monitoring:", default=True),

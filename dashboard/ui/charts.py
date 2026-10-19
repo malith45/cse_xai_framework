@@ -32,6 +32,31 @@ _t.layout = go.Layout(
 pio.templates["cse_dark"] = _t
 pio.templates.default = "cse_dark"
 
+
+def apply_chart_theme(theme: str) -> None:
+    """Keep Plotly text and hover surfaces aligned with the selected UI theme."""
+    if theme == "light":
+        _t.layout.font.color = "#4B5568"
+        _t.layout.title.font.color = "#6B7280"
+        _t.layout.xaxis.tickfont.color = "#6B7280"
+        _t.layout.xaxis.title.font.color = "#6B7280"
+        _t.layout.yaxis.tickfont.color = "#6B7280"
+        _t.layout.yaxis.title.font.color = "#6B7280"
+        _t.layout.legend.font.color = "#6B7280"
+        _t.layout.hoverlabel.bgcolor = "#FFFFFF"
+        _t.layout.hoverlabel.font.color = "#17233D"
+    else:
+        _t.layout.font.color = INK2
+        _t.layout.title.font.color = MUTED
+        _t.layout.xaxis.tickfont.color = MUTED
+        _t.layout.xaxis.title.font.color = MUTED
+        _t.layout.yaxis.tickfont.color = MUTED
+        _t.layout.yaxis.title.font.color = MUTED
+        _t.layout.legend.font.color = MUTED
+        _t.layout.hoverlabel.bgcolor = "#161B26"
+        _t.layout.hoverlabel.font.color = INK
+    pio.templates.default = "cse_dark"
+
 CONFIG = {"displayModeBar": False, "responsive": True}
 
 

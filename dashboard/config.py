@@ -16,7 +16,7 @@ import os
 import streamlit as st
 
 APP_TITLE = "CSE Decision Support"
-APP_ICON = "◆"
+APP_ICON = "assets/cse-decision-support-logo-dark.svg"
 
 
 DISCLAIMER = (

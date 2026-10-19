@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import html as _html
 from datetime import date, timedelta
+from pathlib import Path
 from string import Template
 from typing import Callable, Sequence
 
@@ -39,6 +40,12 @@ VIOLET = "#8F7AE5"       # tertiary series           (validated chart slot 4)
 GOLD = "#C28306"         # spare; not in the colorway (too close to DOWN)
 ACCENT = "#2DD4BF"       # bright accent for glows, focus rings, highlights only
 AMBER = "#F5B731"        # reserved for the demonstration banner only
+_LOGO_DIR = Path(__file__).resolve().parents[1] / "assets"
+
+
+def logo_svg(theme: str = "dark") -> str:
+    filename = "cse-decision-support-logo-light.svg" if theme == "light" else "cse-decision-support-logo-dark.svg"
+    return (_LOGO_DIR / filename).read_text(encoding="utf-8")
 
 _CSS = Template("""
 <style>
@@ -55,6 +62,77 @@ _CSS = Template("""
   --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px -12px rgba(0,0,0,0.6);
   --glass: rgba(16,20,29,0.78);
 }
+body:has(.theme-light) {
+  --ink: #17233D; --ink2: #4B5568; --muted: #6B7280;
+  --bg0: #F5F7FA; --bg1: #FFFFFF; --surface: #FFFFFF; --surface2: #EEF2F5;
+  --line: #E2E7ED; --line2: #CBD5DF; --glass: rgba(255,255,255,0.88);
+  --up: #0F9F9A; --accent: #0F9F9A;
+  --shadow: 0 1px 0 rgba(23,35,61,0.04) inset, 0 12px 30px -16px rgba(23,35,61,0.24);
+}
+body:has(.theme-light) .stApp {
+  background: radial-gradient(1000px 500px at 8% -10%, rgba(15,159,154,0.09), transparent 60%), var(--bg0);
+}
+body:has(.theme-light) [data-testid="stSidebar"] {
+  background: linear-gradient(180deg, rgba(15,159,154,0.04), transparent 30%), var(--bg1) !important;
+}
+body:has(.theme-light) [data-testid="stBaseButton-primary"],
+body:has(.theme-light) [data-testid="stBaseButton-primaryFormSubmit"],
+body:has(.theme-light) [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] {
+  background: linear-gradient(135deg, #0F9F9A, #0B817D) !important;
+}
+body:has(.theme-light) .st-key-login-shell [data-testid="stTextInputRootElement"] {
+  background: #FFFFFF !important; border-color: #CBD5DF !important;
+  color: var(--ink) !important; box-shadow: 0 2px 8px rgba(23,35,61,0.06) !important;
+}
+body:has(.theme-light) .st-key-login-shell [data-testid="stTextInputRootElement"]:focus-within {
+  background: #FFFFFF !important; border-color: #0F9F9A !important;
+  box-shadow: 0 0 0 3px rgba(15,159,154,0.14) !important;
+}
+body:has(.theme-light) .st-key-login-shell [data-testid="stTextInput"] input {
+  color: #17233D !important; caret-color: #0F9F9A !important;
+}
+body:has(.theme-light) [data-testid="stBaseButton-primary"] p,
+body:has(.theme-light) [data-testid="stBaseButton-primaryFormSubmit"] p,
+body:has(.theme-light) [data-testid="stFormSubmitButton"] button p {
+  color: #FFFFFF !important;
+}
+body:has(.theme-light) .st-key-login-shell {
+  background:
+    linear-gradient(var(--glass), var(--glass)) padding-box,
+    linear-gradient(160deg, rgba(15,159,154,0.32), rgba(23,35,61,0.08)) border-box;
+}
+.st-key-theme-bar {
+  position: fixed; top: 3.5rem; right: 1.25rem; z-index: 100;
+  margin: 0; width: 230px; max-width: calc(100vw - 2rem);
+}
+.st-key-theme-bar > div { display: flex; justify-content: flex-end; }
+.st-key-theme-bar [data-testid="stHorizontalBlock"] { width: min(100%, 230px); margin-left: auto; }
+.st-key-theme-bar [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child { display: none; }
+.st-key-theme-bar [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child { width: 100%; }
+.st-key-theme-bar [data-testid="stButtonGroup"] {
+  background: var(--surface); border: 1px solid var(--line2); border-radius: 999px;
+  padding: 0.18rem; box-shadow: var(--shadow);
+}
+.st-key-theme-bar button[data-variant="segmented_control"] {
+  min-height: 2rem; border-radius: 999px !important; color: var(--muted) !important;
+  padding: 0.25rem 0.7rem !important; font-size: 0.76rem !important;
+}
+.st-key-theme-bar button[data-variant="segmented_control"][aria-checked="true"] {
+  background: var(--surface2) !important; color: var(--ink) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+}
+[data-testid="stAppViewContainer"] .block-container:has(.gate) {
+  min-height: 100vh; padding-top: 0; padding-bottom: 0;
+  display: flex; flex-direction: column; justify-content: center;
+}
+[data-testid="stAppViewContainer"] .block-container:has(.gate) > div:first-child { width: 100%; }
+[data-testid="stVerticalBlock"].st-key-login-shell {
+  width: min(100%, 560px) !important; max-width: 560px !important;
+  margin-left: auto !important; margin-right: auto !important;
+  position: relative; top: -3.5rem;
+}
+[data-testid="stHorizontalBlock"] { gap: 1rem !important; }
+[data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] { margin-bottom: 0.25rem; }
 
 /* ---------- global type & plane ------------------------------------------ */
 html, body, [class*="css"], .stApp, .stMarkdown, .stDataFrame, .stApp * {
@@ -75,9 +153,24 @@ code, pre, .mono { font-family: var(--mono) !important; }
 [data-testid="stHeader"] { background: transparent !important; backdrop-filter: none; }
 [data-testid="stDecoration"] { display: none; }
 [data-testid="stAppDeployButton"] { display: none; }
-[data-testid="stToolbar"] { right: 0.75rem; top: 0.5rem; }
-[data-testid="stToolbar"] button { color: var(--muted) !important; }
+body [data-testid="stToolbar"],
+body [data-testid="stAppViewContainer"] [data-testid="stToolbar"] {
+  display: none !important; visibility: hidden !important; pointer-events: none !important;
+}
+body [data-testid="stToolbar"] button[aria-label="Main menu"],
+body [data-testid="stHeader"] button[aria-label="Main menu"],
+body [data-testid="stHeader"] [data-testid="stMainMenu"] {
+  display: none !important; visibility: hidden !important; pointer-events: none !important;
+}
+[data-testid="stAppViewContainer"] header [data-testid="stAppDeployButton"] { display: none !important; }
+[data-testid="stAppViewContainer"] header a[href*="github.com"],
+[data-testid="stAppViewContainer"] header a[aria-label*="GitHub"],
+[data-testid="stAppViewContainer"] header button[aria-label*="Fork"],
+[data-testid="stAppViewContainer"] header button[aria-label*="Deploy"] {
+  display: none !important;
+}
 .block-container { padding-top: 1.6rem; padding-bottom: 4rem; max-width: 1360px; }
+.block-container > div:first-child { max-width: 1320px; margin: 0 auto; }
 /* markdown elements that only carry a <style> tag should not take up layout space */
 [data-testid="stElementContainer"]:has(> .stMarkdown > [data-testid="stMarkdownContainer"] > style:only-child) { display: none; }
 
@@ -113,13 +206,19 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 
 /* ---------- sidebar -------------------------------------------------------- */
 [data-testid="stSidebar"] {
-  background: linear-gradient(180deg, rgba(45,212,191,0.04), transparent 30%), var(--bg1) !important;
+  background:
+    radial-gradient(420px 240px at 0% 0%, rgba(45,212,191,0.08), transparent 72%),
+    linear-gradient(180deg, rgba(45,212,191,0.04), transparent 30%), var(--bg1) !important;
   border-right: 1px solid var(--line);
+  width: 360px !important;
+  min-width: 360px !important;
+  max-width: 360px !important;
 }
+body:has(.theme-light) [data-testid="stSidebar"] { border-right-color: #E2E7ED; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 0; }
 [data-testid="stSidebarHeader"] { padding-bottom: 0; }
 [data-testid="stSidebarNavSeparator"] { display: none; }
-[data-testid="stSidebarNav"] { padding: 0.25rem 0.6rem 0.4rem 0.6rem; }
+[data-testid="stSidebarNav"] { padding: 0.9rem 0.7rem 0.7rem 0.7rem; }
 [data-testid="stSidebarNav"]::before {
   content: "Workspace"; display: block; color: var(--muted); font-size: 0.66rem; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase; padding: 0.5rem 0.9rem 0.45rem 0.9rem;
@@ -127,7 +226,7 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 [data-testid="stSidebarNavItems"] { padding: 0; gap: 2px; display: flex; flex-direction: column; }
 [data-testid="stSidebarNavItems"] li > div { margin: 0; }
 [data-testid="stSidebarNavLink"] {
-  border-radius: 12px; padding: 0.55rem 0.85rem; margin: 0; position: relative;
+  border-radius: 12px; padding: 0.7rem 0.85rem; margin: 0; position: relative;
   background: transparent !important; transition: background .18s ease, color .18s ease;
   border: 1px solid transparent;
 }
@@ -137,6 +236,11 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 }
 [data-testid="stSidebarNavLink"]:hover { background: rgba(255,255,255,0.035) !important; }
 [data-testid="stSidebarNavLink"]:hover span { color: var(--ink) !important; }
+[data-testid="stSidebarNavLink"]:focus-visible,
+[data-testid="stBaseButton-secondary"]:focus-visible,
+[data-testid="stLinkButton"] a:focus-visible {
+  outline: 2px solid var(--accent) !important; outline-offset: 2px;
+}
 /* active page — `nav_active_css()` emits a per-page href rule that sets these variables */
 [data-testid="stSidebarNavLink"].nav-active, [data-testid="stSidebarNavLink"][aria-current="page"] {
   background: linear-gradient(90deg, rgba(45,212,191,0.14), rgba(45,212,191,0.04)) !important;
@@ -151,24 +255,28 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .brand) { position: static; }
 [data-testid="stSidebarNav"] { padding-top: 0.6rem !important; }
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] .brand) {
-  position: absolute; top: 0.85rem; left: 1.25rem; right: 3.6rem; z-index: 2;
+  position: absolute; top: 0.85rem; left: 1rem; right: 1rem; z-index: 2;
 }
-.brand { display: flex; align-items: center; gap: 0.75rem; padding: 0; }
+.brand {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface);
+  box-shadow: var(--shadow);
+}
 .brand-mark {
   width: 40px; height: 40px; border-radius: 12px; flex: none; display: grid; place-items: center;
-  background: linear-gradient(135deg, #2DD4BF 0%, #5E6CEB 100%);
-  box-shadow: 0 8px 20px -8px rgba(45,212,191,0.6), 0 0 0 1px rgba(255,255,255,0.08) inset;
-  color: #061016; font-weight: 800; font-size: 1.05rem;
+  background: var(--surface2); border: 1px solid var(--line2); padding: 0.25rem;
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,0.45);
 }
+.brand-mark svg { width: 100%; height: 100%; display: block; }
 .brand-name { font-weight: 800; letter-spacing: -0.02em; font-size: 1.02rem; color: var(--ink); line-height: 1.15; }
 .brand > div { min-width: 0; }
 .brand-tag { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.02em; margin-top: 2px;
              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sb-label { color: var(--muted); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em;
-            text-transform: uppercase; margin: 0.6rem 0 0.2rem 0; padding-bottom: 0.4rem;
+            text-transform: uppercase; margin: 1rem 0 0.35rem 0; padding-bottom: 0.5rem;
             border-bottom: 1px solid var(--line); }
 .status {
-  display: grid; gap: 0.35rem; padding: 0.75rem 0.85rem; border-radius: 12px; margin: 0.4rem 0 0.8rem 0;
+  display: grid; gap: 0.5rem; padding: 0.85rem 0.9rem; border-radius: 14px; margin: 0.75rem 0 0.9rem 0;
   background: var(--surface); border: 1px solid var(--line);
 }
 .status-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.74rem; }
@@ -182,12 +290,34 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 [data-baseweb="select"] > div:first-child,
 [data-baseweb="input"], [data-baseweb="base-input"],
 [data-testid="stDateInputField"], [data-testid="stNumberInputContainer"] {
-  background: var(--surface2) !important; border: 1px solid var(--line2) !important;
+  background: rgba(22,27,38,0.88) !important; border: 1px solid var(--line2) !important;
   border-radius: var(--r-sm) !important; color: var(--ink) !important;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
+body:has(.theme-light) [data-baseweb="select"] > div:first-child,
+body:has(.theme-light) [data-baseweb="input"],
+body:has(.theme-light) [data-baseweb="base-input"],
+body:has(.theme-light) [data-testid="stDateInputField"],
+body:has(.theme-light) [data-testid="stNumberInputContainer"] {
+  background: #FFFFFF !important; border-color: #CBD5DF !important;
+}
+[data-baseweb="select"] > div:first-child:hover,
+[data-baseweb="input"]:hover, [data-baseweb="base-input"]:hover,
+[data-testid="stDateInputField"]:hover, [data-testid="stNumberInputContainer"]:hover {
+  border-color: rgba(45,212,191,0.38) !important;
+}
 [data-baseweb="input"] > div, [data-baseweb="base-input"] > div { background: transparent !important; border: none !important; }
 [data-baseweb="input"] input, [data-baseweb="base-input"] input, [data-baseweb="select"] input { color: var(--ink) !important; }
+.st-key-login-shell [data-testid="stTextInputRootElement"] {
+  background: #1B2230 !important; border-color: #46536A !important;
+  border: 1px solid #46536A !important; border-radius: 10px !important;
+}
+.st-key-login-shell [data-testid="stTextInputRootElement"] > div {
+  background: transparent !important; border: none !important;
+}
+.st-key-login-shell [data-testid="stTextInput"] input {
+  color: var(--ink) !important; caret-color: var(--accent) !important;
+}
 [data-baseweb="select"] > div:first-child:focus-within, [data-baseweb="input"]:focus-within,
 [data-baseweb="base-input"]:focus-within, [data-testid="stNumberInputContainer"]:focus-within {
   border-color: rgba(45,212,191,0.55) !important; box-shadow: 0 0 0 3px rgba(45,212,191,0.14) !important;
@@ -219,11 +349,29 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 }
 [data-testid="stButtonGroup"] button:hover { color: var(--ink) !important; background: rgba(255,255,255,0.04) !important; }
 [data-testid="stButtonGroup"] button p { font-size: 0.8rem !important; }
-[data-testid="stBaseButton-segmented_controlActive"] {
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] {
   background: linear-gradient(180deg, rgba(45,212,191,0.22), rgba(45,212,191,0.12)) !important;
-  color: #fff !important; box-shadow: 0 0 0 1px rgba(45,212,191,0.35) inset, 0 4px 12px -6px rgba(45,212,191,0.6);
+  color: var(--ink) !important; box-shadow: 0 0 0 1px rgba(45,212,191,0.5) inset, 0 4px 12px -6px rgba(45,212,191,0.6);
 }
-[data-testid="stBaseButton-segmented_controlActive"] p { color: #fff !important; }
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] p {
+  color: var(--ink) !important; font-weight: 800 !important;
+}
+.st-key-horizon-control { width: 100% !important; margin-top: 0.35rem; }
+.st-key-horizon-control [data-testid="stWidgetLabel"] {
+  color: var(--muted) !important; font-size: 0.66rem !important; font-weight: 700 !important;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.st-key-horizon-control [data-baseweb="select"] > div:first-child {
+  min-height: 2.6rem; background: var(--surface2) !important;
+  border: 1px solid var(--line2) !important; border-radius: 11px !important;
+}
+.st-key-horizon-control [data-baseweb="select"] input,
+.st-key-horizon-control [data-baseweb="select"] [data-testid="stMarkdownContainer"] p {
+  color: var(--ink) !important; font-weight: 600 !important;
+}
+body:has(.theme-light) .st-key-horizon-control [data-baseweb="select"] > div:first-child {
+  background: #FFFFFF !important; border-color: #CBD5DF !important;
+}
 
 /* radio → pills */
 [data-testid="stRadio"] [role="radiogroup"] { display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
@@ -293,11 +441,25 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 [data-testid="stExpander"] summary p { color: var(--ink2) !important; font-weight: 600; font-size: 0.88rem; }
 [data-testid="stExpander"] summary:hover p { color: var(--ink) !important; }
 [data-testid="stExpander"] summary svg { color: var(--muted); }
+[data-testid="stExpander"] details[open] {
+  border-color: rgba(45,212,191,0.28) !important;
+  box-shadow: 0 12px 30px -20px rgba(45,212,191,0.45);
+}
 [data-testid="stAlert"], [data-testid="stAlertContainer"] {
   background: var(--surface) !important; border: 1px solid var(--line2) !important; border-radius: var(--r-md) !important;
   color: var(--ink2) !important;
 }
 [data-testid="stAlert"] p, [data-testid="stAlertContainer"] p { color: var(--ink2) !important; }
+[data-testid="stDialog"] > div {
+  background:
+    radial-gradient(440px 220px at 0% 0%, rgba(45,212,191,0.10), transparent 70%),
+    var(--surface) !important;
+  border: 1px solid var(--line2); border-radius: var(--r-lg);
+  box-shadow: 0 30px 90px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset;
+}
+[data-testid="stDialog"] h2 { letter-spacing: -0.025em; }
+[data-testid="stDialog"] [data-testid="stMarkdownContainer"] p { color: var(--ink2); }
+[data-testid="stDialog"] [data-testid="stHorizontalBlock"] { gap: 0.7rem; }
 
 /* ---------- demonstration banner — loud, striped, the only amber on screen -- */
 .demo-banner {
@@ -322,6 +484,10 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
            font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
 .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--accent); border-radius: 2px; }
 .subtitle { color: var(--muted); font-size: 0.98rem; margin-top: 0.15rem; max-width: 70ch; }
+.page-head::after {
+  content: ""; display: block; width: 76px; height: 2px; margin-top: 0.8rem;
+  background: linear-gradient(90deg, var(--accent), transparent); border-radius: 2px;
+}
 
 /* ---------- section headers ------------------------------------------------ */
 .section { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
@@ -336,7 +502,7 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
   position: relative; overflow: hidden;
   background: linear-gradient(var(--glass), var(--glass)) padding-box,
               linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02)) border-box;
-  border: 1px solid transparent; border-radius: var(--r-md); padding: 1.05rem 1.2rem 1rem 1.2rem;
+  border: 1px solid transparent; border-radius: var(--r-md); padding: 1.15rem 1.25rem 1.05rem 1.25rem;
   box-shadow: var(--shadow); min-height: 118px; transition: transform .2s ease, box-shadow .2s ease;
 }
 .card:hover, .kpi:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 40px -16px rgba(0,0,0,0.8); }
@@ -382,22 +548,56 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
 .disclaimer::before { content: "◆"; color: var(--line2); font-size: 0.6rem; margin-top: 0.25rem; }
 
 /* ---------- gate ----------------------------------------------------------- */
-[data-testid="stColumn"]:has(.gate) {
-  background: linear-gradient(var(--glass), var(--glass)) padding-box,
-              linear-gradient(160deg, rgba(45,212,191,0.35), rgba(255,255,255,0.04) 40%, rgba(94,108,235,0.30)) border-box;
-  border: 1px solid transparent; border-radius: var(--r-lg); padding: 2.4rem 2.2rem 1.6rem 2.2rem; margin-top: 12vh;
-  box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.02) inset;
+.st-key-login-shell {
+  background:
+    radial-gradient(420px 220px at 50% -12%, rgba(45,212,191,0.14), transparent 72%),
+    linear-gradient(var(--glass), var(--glass)) padding-box,
+    linear-gradient(160deg, rgba(45,212,191,0.42), rgba(255,255,255,0.05) 42%, rgba(94,108,235,0.34)) border-box;
+  width: min(100%, 560px) !important; max-width: 560px !important; flex: 0 1 560px !important;
+  border: 1px solid transparent; border-radius: 24px; padding: 2.75rem 2.5rem 2.2rem 2.5rem;
+  margin: 0 auto;
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset,
+              0 0 60px -36px rgba(45,212,191,0.55);
   backdrop-filter: blur(18px);
+  margin-left: auto !important; margin-right: auto !important;
 }
-.gate { text-align: center; margin: 0 0 1.4rem 0; }
+[data-testid="stVerticalBlock"].st-key-login-shell { top: 0; }
+.gate { text-align: center; margin: 0 0 1.7rem 0; }
 .gate-mark {
-  width: 56px; height: 56px; margin: 0 auto 1rem auto; border-radius: 16px; display: grid; place-items: center;
-  background: linear-gradient(135deg, #2DD4BF 0%, #5E6CEB 100%); color: #061016; font-size: 1.35rem; font-weight: 800;
-  box-shadow: 0 16px 36px -14px rgba(45,212,191,0.8), 0 0 0 1px rgba(255,255,255,0.10) inset;
+  width: 72px; height: 72px; margin: 0 auto 1.2rem auto; border-radius: 20px; display: grid; place-items: center;
+  background: var(--surface2); border: 1px solid var(--line2); padding: 0.55rem;
+  box-shadow: 0 18px 40px -14px rgba(0,0,0,0.45);
 }
-.gate h1 { font-size: 1.65rem !important; margin: 0.2rem 0 0.5rem 0 !important; }
-.gate p { color: var(--muted); font-size: 0.92rem; line-height: 1.55; max-width: 38ch; margin: 0 auto; }
-.gate-kicker { color: var(--accent); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 0.6rem; }
+.gate-mark svg { width: 100%; height: 100%; display: block; }
+.gate h1 { font-size: 1.85rem !important; margin: 0.2rem 0 0.65rem 0 !important; }
+.gate p { color: var(--ink2); font-size: 0.94rem; line-height: 1.55; max-width: 32ch; margin: 0 auto; }
+.gate-kicker { color: var(--accent); font-size: 0.64rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 0.7rem; }
+.st-key-login-shell [data-testid="stForm"] { margin-top: 0.4rem; }
+.st-key-login-shell [data-testid="InputInstructions"] { display: none !important; }
+.st-key-login-shell .gate-field-label {
+  color: var(--muted); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; text-align: left; margin: 0 0 0.45rem 0.15rem;
+}
+.st-key-login-shell [data-testid="stTextInput"] input {
+  min-height: 3rem; text-align: left; letter-spacing: 0.08em; font-size: 1rem;
+}
+.st-key-login-shell [data-testid="stTextInputRootElement"]:focus-within {
+  background: #202A3A !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(45,212,191,0.16) !important;
+}
+.st-key-login-shell [data-testid="stTextInput"] [data-testid="InputInstructions"],
+.st-key-login-shell [data-testid="stTextInput"] button,
+.st-key-login-shell [data-testid="stTextInputRootElement"] button {
+  border-left: 0 !important; box-shadow: none !important;
+}
+.st-key-login-shell [data-testid="stFormSubmitButton"] button {
+  min-height: 3rem; margin-top: 0.35rem; border-radius: 12px !important;
+}
+.st-key-login-shell [data-testid="stCaptionContainer"] {
+  color: var(--muted) !important; font-size: 0.72rem !important; line-height: 1.5;
+  text-align: center; border-top: 1px solid var(--line); margin-top: 1.35rem; padding-top: 1rem;
+}
 
 /* ---------- loading / empty / error states -------------------------------- */
 .state { display: flex; gap: 1rem; align-items: flex-start; padding: 1.3rem 1.4rem; border-radius: var(--r-md);
@@ -453,11 +653,16 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
   .kpi-sub { font-size: 0.74rem; }
   .section { margin-top: 1.1rem; gap: 0.2rem 0.6rem; }
   .section-title { font-size: 0.98rem; }
+  .page-head { margin-bottom: 1.25rem; }
+  .page-head::after { margin-top: 0.55rem; }
   [data-testid="stPlotlyChart"] { padding: 0.3rem 0 0 0; }
   .narrative { font-size: 0.95rem; padding: 1rem 1rem 1rem 1.2rem; }
   .state { flex-direction: column; gap: 0.6rem; padding: 1rem 1.1rem; }
   .waking { margin-top: 2vh; }
-  [data-testid="stColumn"]:has(.gate) { padding: 1.6rem 1.2rem 1.2rem 1.2rem; margin-top: 4vh; }
+  .st-key-login-shell {
+    width: calc(100% - 1rem) !important; max-width: none !important; flex-basis: calc(100% - 1rem) !important;
+    padding: 1.6rem 1.2rem 1.2rem 1.2rem; margin-top: 4vh;
+  }
   /* data tables become card lists; the grid needs horizontal scrolling on a phone */
   [class*="st-key-desk-"] { display: none; }
   [class*="st-key-mob-"] { display: block; }
@@ -471,6 +676,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 
 
 def inject_css() -> None:
+    theme = st.session_state.get("theme", "dark")
+    st.markdown(f"<div class='theme-marker theme-{theme}'></div>", unsafe_allow_html=True)
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
@@ -596,6 +803,19 @@ def responsive_table(key: str, df: pd.DataFrame, *, column_config: dict,
 # --------------------------------------------------------------------------- #
 # Sidebar — shared selectors persisted in session state
 # --------------------------------------------------------------------------- #
+@st.dialog("Sign out of the workspace")
+def _confirm_sign_out() -> None:
+    st.write("Are you sure you want to sign out? Your current stock, date, and horizon selections will be cleared.")
+    cancel, confirm = st.columns(2)
+    with cancel:
+        if st.button("Cancel", use_container_width=True):
+            st.rerun()
+    with confirm:
+        if st.button("Sign out", type="primary", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
+
 def sidebar_controls() -> None:
     repo = get_repository()
     status = repo.get_data_status()
@@ -610,7 +830,7 @@ def sidebar_controls() -> None:
 
     with st.sidebar:
         st.markdown(
-            f"<div class='brand'><div class='brand-mark'>◆</div>"
+            f"<div class='brand'><div class='brand-mark'>{logo_svg(st.session_state.get('theme', 'dark'))}</div>"
             f"<div><div class='brand-name'>{APP_TITLE}</div>"
             f"<div class='brand-tag'>Explainable ML · S&amp;P SL20 constituents</div></div></div>",
             unsafe_allow_html=True,
@@ -621,10 +841,17 @@ def sidebar_controls() -> None:
         st.selectbox("Stock", options=list(labels), format_func=labels.get, key="ticker")
         st.date_input("As-of date", key="as_of",
                       min_value=status.get("first_date", date(2022, 1, 3)), max_value=status["as_of"])
-        st.segmented_control("Horizon", options=["t+1", "t+5"], key="horizon",
-                             help="t+1 = next trading day; t+5 = five trading days ahead")
-        if ss.horizon is None:  # segmented control allows deselect
-            ss.horizon = "t+1"
+        with st.container(key="horizon-control"):
+            st.selectbox(
+                "Prediction horizon",
+                options=["t+1", "t+5"],
+                format_func=lambda value: (
+                    "Next trading day (t+1)" if value == "t+1"
+                    else "Five trading days (t+5)"
+                ),
+                key="horizon",
+                help="Choose how far ahead the prediction is made.",
+            )
 
         st.divider()
         st.link_button("Open evaluation questionnaire", QUESTIONNAIRE_URL, use_container_width=True)
@@ -637,8 +864,7 @@ def sidebar_controls() -> None:
             unsafe_allow_html=True,
         )
         if st.button("Sign out", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
+            _confirm_sign_out()
 
 
 def selection() -> tuple[str, date, str]:
