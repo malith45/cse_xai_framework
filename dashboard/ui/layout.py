@@ -713,7 +713,7 @@ def nav_active_css(url_path: str) -> None:
         f"border-color:rgba(45,212,191,0.18);box-shadow:0 0 0 1px rgba(45,212,191,0.06) inset;}}"
         f"{link}::before{{content:'';position:absolute;left:-0.6rem;top:22%;height:56%;width:3px;"
         f"background:var(--accent);border-radius:0 3px 3px 0;box-shadow:0 0 12px rgba(45,212,191,0.6);}}"
-        f"{link} span{{color:#fff !important;font-weight:600;}}"
+        f"{link} span{{color:var(--ink) !important;font-weight:600;}}"
         f"{link} [data-testid=\"stIconMaterial\"]{{color:var(--accent) !important;}}</style>",
         unsafe_allow_html=True,
     )
