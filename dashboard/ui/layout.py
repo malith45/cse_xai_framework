@@ -298,26 +298,25 @@ body:has(.theme-light) [data-testid="stSidebar"] { border-right-color: #E2E7ED; 
 
 /* ---------- inputs --------------------------------------------------------- */
 [data-baseweb="select"] > div:first-child,
-[data-baseweb="input"], [data-baseweb="base-input"],
+[data-testid="stTextInputRootElement"],
 [data-testid="stDateInputField"], [data-testid="stNumberInputContainer"] {
   background: rgba(22,27,38,0.88) !important; border: 1px solid var(--line2) !important;
   border-radius: var(--r-sm) !important; color: var(--ink) !important;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 body:has(.theme-light) [data-baseweb="select"] > div:first-child,
-body:has(.theme-light) [data-baseweb="input"],
-body:has(.theme-light) [data-baseweb="base-input"],
+body:has(.theme-light) [data-testid="stTextInputRootElement"],
 body:has(.theme-light) [data-testid="stDateInputField"],
 body:has(.theme-light) [data-testid="stNumberInputContainer"] {
   background: #FFFFFF !important; border-color: #CBD5DF !important;
 }
 [data-baseweb="select"] > div:first-child:hover,
-[data-baseweb="input"]:hover, [data-baseweb="base-input"]:hover,
+[data-testid="stTextInputRootElement"]:hover,
 [data-testid="stDateInputField"]:hover, [data-testid="stNumberInputContainer"]:hover {
   border-color: rgba(45,212,191,0.38) !important;
 }
-[data-baseweb="input"] > div, [data-baseweb="base-input"] > div { background: transparent !important; border: none !important; }
-[data-baseweb="input"] input, [data-baseweb="base-input"] input, [data-baseweb="select"] input { color: var(--ink) !important; }
+[data-testid="stTextInputRootElement"] > div { background: transparent !important; border: none !important; }
+[data-baseweb="select"] input { color: var(--ink) !important; }
 .st-key-login-shell [data-testid="stTextInputRootElement"] {
   background: #1B2230 !important; border-color: #46536A !important;
   border: 1px solid #46536A !important; border-radius: 10px !important;
@@ -328,18 +327,20 @@ body:has(.theme-light) [data-testid="stNumberInputContainer"] {
 .st-key-login-shell [data-testid="stTextInput"] input {
   color: var(--ink) !important; caret-color: var(--accent) !important;
 }
-[data-baseweb="select"] > div:first-child:focus-within, [data-baseweb="input"]:focus-within,
-[data-baseweb="base-input"]:focus-within, [data-testid="stNumberInputContainer"]:focus-within {
+[data-baseweb="select"] > div:first-child:focus-within,
+[data-testid="stTextInputRootElement"]:focus-within,
+[data-testid="stDateInputField"]:focus-within,
+[data-testid="stNumberInputContainer"]:focus-within {
   border-color: rgba(45,212,191,0.55) !important; box-shadow: 0 0 0 3px rgba(45,212,191,0.14) !important;
 }
-[data-baseweb="select"] svg, [data-baseweb="input"] svg { color: var(--muted); }
+[data-baseweb="select"] svg, [data-testid="stTextInputRootElement"] svg { color: var(--muted); }
 [data-testid="stNumberInput"] button { background: transparent !important; color: var(--muted) !important; border-left: 1px solid var(--line2) !important; }
 [data-testid="stNumberInput"] button:hover { color: var(--ink) !important; background: rgba(255,255,255,0.04) !important; }
 [data-baseweb="popover"] [role="listbox"], [data-baseweb="menu"], [data-baseweb="calendar"] {
   background: var(--surface2) !important; border: 1px solid var(--line2) !important;
   border-radius: 12px !important; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.7) !important;
 }
-[data-baseweb="popover"] [data-baseweb="input"] {
+[data-baseweb="popover"] input {
   display: none !important;
 }
 [data-baseweb="popover"] li[role="option"] { color: var(--ink2) !important; }
