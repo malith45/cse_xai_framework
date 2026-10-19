@@ -640,7 +640,7 @@ body:has(.theme-light) .st-key-horizon-control [data-baseweb="select"] > div:fir
 
 /* ---------- chart captions, performance line, mobile card lists ------------ */
 .figcap { color: var(--muted); font-size: 0.8rem; line-height: 1.5; margin: 0.35rem 0.2rem 1rem 0.2rem; }
-.figcap::before { content: "About this chart · "; color: var(--ink2); font-weight: 600; }
+.figcap::before { content: none; }
 .perf { color: var(--muted); font-size: 0.72rem; margin-top: 0.45rem; font-family: var(--mono) !important; }
 .mcard { border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.85rem; margin-bottom: 0.5rem;
          background: var(--surface); }
