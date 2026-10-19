@@ -117,7 +117,11 @@ body:has(.theme-light) .st-key-login-shell {
   min-height: 2rem; border-radius: 999px !important; color: var(--muted) !important;
   padding: 0.25rem 0.7rem !important; font-size: 0.76rem !important;
 }
-.st-key-theme-bar button[data-variant="segmented_control"][aria-checked="true"] {
+.st-key-theme-bar button[data-variant="segmented_control"][aria-checked="true"],
+.st-key-theme-bar [data-testid*="segmented_controlActive"],
+.st-key-theme-bar button[aria-pressed="true"],
+.st-key-theme-bar button[aria-selected="true"],
+.st-key-theme-bar button[data-selected="true"] {
   background: var(--surface2) !important; color: var(--ink) !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.22);
 }
@@ -130,6 +134,12 @@ body:has(.theme-light) .st-key-login-shell {
   width: min(100%, 560px) !important; max-width: 560px !important;
   margin-left: auto !important; margin-right: auto !important;
   position: relative; top: -3.5rem;
+}
+[data-testid="stVerticalBlock"].st-key-login-shell > div,
+[data-testid="stVerticalBlock"].st-key-login-shell > div > div,
+[data-testid="stVerticalBlock"].st-key-login-shell [data-testid="stElementContainer"],
+[data-testid="stVerticalBlock"].st-key-login-shell [data-testid="stMarkdown"] {
+  width: 100% !important; max-width: 100% !important;
 }
 [data-testid="stHorizontalBlock"] { gap: 1rem !important; }
 [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] { margin-bottom: 0.25rem; }
@@ -329,6 +339,9 @@ body:has(.theme-light) [data-testid="stNumberInputContainer"] {
   background: var(--surface2) !important; border: 1px solid var(--line2) !important;
   border-radius: 12px !important; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.7) !important;
 }
+[data-baseweb="popover"] [data-baseweb="input"] {
+  display: none !important;
+}
 [data-baseweb="popover"] li[role="option"] { color: var(--ink2) !important; }
 [data-baseweb="popover"] li[role="option"]:hover, [data-baseweb="popover"] li[aria-selected="true"] {
   background: rgba(45,212,191,0.10) !important; color: var(--ink) !important;
@@ -349,11 +362,19 @@ body:has(.theme-light) [data-testid="stNumberInputContainer"] {
 }
 [data-testid="stButtonGroup"] button:hover { color: var(--ink) !important; background: rgba(255,255,255,0.04) !important; }
 [data-testid="stButtonGroup"] button p { font-size: 0.8rem !important; }
-[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] {
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"],
+[data-testid="stButtonGroup"] [data-testid*="segmented_controlActive"],
+[data-testid="stButtonGroup"] button[aria-pressed="true"],
+[data-testid="stButtonGroup"] button[aria-selected="true"],
+[data-testid="stButtonGroup"] button[data-selected="true"] {
   background: linear-gradient(180deg, rgba(45,212,191,0.22), rgba(45,212,191,0.12)) !important;
   color: var(--ink) !important; box-shadow: 0 0 0 1px rgba(45,212,191,0.5) inset, 0 4px 12px -6px rgba(45,212,191,0.6);
 }
-[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] p {
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] p,
+[data-testid="stButtonGroup"] [data-testid*="segmented_controlActive"] p,
+[data-testid="stButtonGroup"] button[aria-pressed="true"] p,
+[data-testid="stButtonGroup"] button[aria-selected="true"] p,
+[data-testid="stButtonGroup"] button[data-selected="true"] p {
   color: var(--ink) !important; font-weight: 800 !important;
 }
 .st-key-horizon-control { width: 100% !important; margin-top: 0.35rem; }
