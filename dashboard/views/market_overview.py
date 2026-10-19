@@ -6,6 +6,7 @@ from data.repository import get_repository
 from ui.charts import CONFIG, gauge, polarity_label
 from ui.layout import (DOWN, INDIGO, UP, card, chart_caption, footer, page_header, pill, responsive_table,
                        section, selection, window)
+from ui.i18n import tr
 from ui.states import empty_state, try_fetch
 
 repo = get_repository()
@@ -46,7 +47,7 @@ with c3:
         card("Breadth", "—", "not available for this date")
 with c4:
     if risk:
-        card("Market risk", risk["regime"],
+        card("Market risk", tr(risk["regime"]),
              f"1-day VaR 95% ≈ {risk['var_1d_95']}% · 20-day vol {risk['realised_vol_20d']}%",
              "down" if risk["regime"] == "Elevated" else "")
     else:
@@ -67,11 +68,12 @@ with left:
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(go.Scatter(x=h.date, y=h.aspi, name="ASPI (left axis)", line=dict(width=2, color=UP)),
                       secondary_y=False)
-        fig.add_trace(go.Scatter(x=h.date, y=h.sl20, name="S&P SL20 (right axis, dotted)",
+        fig.add_trace(go.Scatter(x=h.date, y=h.sl20, name="S&P SL20 (right axis)",
                                  line=dict(width=2, dash="dot", color=INDIGO)), secondary_y=True)
         fig.update_yaxes(title_text="ASPI", secondary_y=False)
         fig.update_yaxes(title_text="S&P SL20", secondary_y=True, showgrid=False)
-        fig.update_layout(height=360, hovermode="x unified", margin=dict(t=44))
+        fig.update_layout(height=360, hovermode="x unified", margin=dict(t=44),
+                          legend=dict(entrywidth=0.45, entrywidthmode="fraction"))
         st.plotly_chart(fig, use_container_width=True, config=CONFIG)
         first = h.iloc[0]
         chart_caption(

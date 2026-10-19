@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from data.repository import get_repository
+from ui.i18n import tr
 from services.signal import cutoff_note, headline, reliability_sentence, strength, strength_supported
 from ui.charts import CONFIG
 from ui.layout import (DOWN, MUTED, UP, card, chart_caption, footer, page_header, responsive_table, section,
@@ -76,39 +77,41 @@ else:
         f"{as_of:%d %B}. The dashed line and {arrow} marker show the model's call for {active['target_date']:%d %B}: "
         f"{'up' if active['direction'] == 'up' else 'down'}, with a {active['p_up']:.0%} chance of a rise "
         f"({cutoff_note(active.get('threshold'))}).")
-st.caption("How to read the signal: the model calls 'up' once P(up) reaches its own cut-off, which is tuned on past "
+with st.expander(tr("About this chart")):
+  st.caption("How to read the signal: the model calls 'up' once P(up) reaches its own cut-off, which is tuned on past "
            "data and is not always 50%. Calls within 5 points of the cut-off are shown as 'Unclear' (with the side they lean to). "
            + reliability_sentence(rel[horizon], horizon))
 
-st.page_link("views/explainability.py", label="Why this prediction? See which signals drove it",
+st.page_link("views/explainability.py", label=tr("Why this prediction? See which signals drove it"),
              icon=":material/psychology:")
 
-# ---- walk-forward accuracy ------------------------------------------------
-section(f"Historical directional accuracy · {horizon}",
-        "Out-of-sample metrics per walk-forward test block (63 trading days each)")
-blocks = try_fetch(repo.get_block_accuracy, ticker, horizon)
-if blocks is None or blocks.empty:
-    empty_state("No accuracy history yet",
-                f"The model has not been back-tested on {name} for the {horizon} horizon, so there is no track "
-                "record to show. The prediction above still stands, but treat it with extra caution.")
-else:
-    responsive_table(
-        "blocks", blocks,
-        column_config={
-            "block": "Block",
-            "test_start": st.column_config.DateColumn("Test start", format="DD MMM YYYY"),
-            "test_end": st.column_config.DateColumn("Test end", format="DD MMM YYYY"),
-            "accuracy": st.column_config.ProgressColumn("Accuracy", min_value=0, max_value=1, format="%.3f"),
-            "f1": st.column_config.NumberColumn("F1", format="%.3f"),
-            "precision": st.column_config.NumberColumn("Precision", format="%.3f"),
-            "recall": st.column_config.NumberColumn("Recall", format="%.3f"),
-            "n": "Days",
-        },
-        title=lambda r: f"Block {int(r.block)}",
-        subtitle=lambda r: f"{r.test_start:%d %b %Y} – {r.test_end:%d %b %Y} · {int(r.n)} days",
-        fields=[("Accuracy", lambda r: f"{r.accuracy:.3f}"), ("F1", lambda r: f"{r.f1:.3f}"),
-                ("Precision", lambda r: f"{r.precision:.3f}"), ("Recall", lambda r: f"{r.recall:.3f}")],
-    )
-    st.caption(f"Mean accuracy across blocks: {blocks.accuracy.mean():.3f} · a naive coin toss scores 0.500.")
+with st.expander(tr("Details for experts")):
+    # ---- walk-forward accuracy ------------------------------------------------
+    section(f"Historical directional accuracy · {horizon}",
+            "Out-of-sample metrics per walk-forward test block (63 trading days each)")
+    blocks = try_fetch(repo.get_block_accuracy, ticker, horizon)
+    if blocks is None or blocks.empty:
+        empty_state("No accuracy history yet",
+                    f"The model has not been back-tested on {name} for the {horizon} horizon, so there is no track "
+                    "record to show. The prediction above still stands, but treat it with extra caution.")
+    else:
+        responsive_table(
+            "blocks", blocks,
+            column_config={
+                "block": "Block",
+                "test_start": st.column_config.DateColumn("Test start", format="DD MMM YYYY"),
+                "test_end": st.column_config.DateColumn("Test end", format="DD MMM YYYY"),
+                "accuracy": st.column_config.ProgressColumn("Accuracy", min_value=0, max_value=1, format="%.3f"),
+                "f1": st.column_config.NumberColumn("F1", format="%.3f"),
+                "precision": st.column_config.NumberColumn("Precision", format="%.3f"),
+                "recall": st.column_config.NumberColumn("Recall", format="%.3f"),
+                "n": "Days",
+            },
+            title=lambda r: f"Block {int(r.block)}",
+            subtitle=lambda r: f"{r.test_start:%d %b %Y} – {r.test_end:%d %b %Y} · {int(r.n)} days",
+            fields=[("Accuracy", lambda r: f"{r.accuracy:.3f}"), ("F1", lambda r: f"{r.f1:.3f}"),
+                    ("Precision", lambda r: f"{r.precision:.3f}"), ("Recall", lambda r: f"{r.recall:.3f}")],
+        )
+        st.caption(f"Mean accuracy across blocks: {blocks.accuracy.mean():.3f} · a naive coin toss scores 0.500.")
 
 footer()

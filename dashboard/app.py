@@ -16,7 +16,8 @@ from config import APP_ICON, APP_TITLE
 from services.perf import start_page
 from ui.auth import require_passcode
 from ui.charts import apply_chart_theme
-from ui.layout import inject_css, nav_active_css, sidebar_controls
+from ui.i18n import tr
+from ui.layout import _pick, inject_css, nav_active_css, sidebar_controls
 from ui.states import run_guarded, warm_up
 
 # "auto" = expanded on desktop, collapsed on phones (the sidebar would otherwise
@@ -29,21 +30,16 @@ inject_css()
 with st.container(key="theme-bar"):
     _, theme_column = st.columns([0.84, 0.16], vertical_alignment="center")
     with theme_column:
-        st.segmented_control(
-            "Appearance",
-            options=["dark", "light"],
-            format_func=lambda value: "☾ Dark" if value == "dark" else "☀ Light",
-            key="theme",
-            label_visibility="collapsed",
-        )
+        _pick("Appearance", ["dark", "light"], "theme", label_visibility="collapsed",
+              format_func=lambda value: "☾ Dark" if value == "dark" else "☀ Light")
 apply_chart_theme(st.session_state.get("theme", "dark"))
 
 pages = [
-    st.Page("views/market_overview.py", title="Market overview", icon=":material/monitoring:", default=True),
-    st.Page("views/stock_prediction.py", title="Stock prediction", icon=":material/query_stats:"),
-    st.Page("views/explainability.py", title="Explainability", icon=":material/psychology:"),
-    st.Page("views/risk_stress_test.py", title="Risk & stress test", icon=":material/shield:"),
-    st.Page("views/news_sentiment.py", title="News sentiment", icon=":material/newspaper:"),
+    st.Page("views/market_overview.py", title=tr("Market overview"), icon=":material/monitoring:", default=True),
+    st.Page("views/stock_prediction.py", title=tr("Stock prediction"), icon=":material/query_stats:"),
+    st.Page("views/explainability.py", title=tr("Explainability"), icon=":material/psychology:"),
+    st.Page("views/risk_stress_test.py", title=tr("Risk & stress test"), icon=":material/shield:"),
+    st.Page("views/news_sentiment.py", title=tr("News sentiment"), icon=":material/newspaper:"),
 ]
 authenticated = bool(st.session_state.get("authenticated"))
 nav = st.navigation(pages, position="sidebar" if authenticated else "hidden")

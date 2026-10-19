@@ -13,6 +13,7 @@ from typing import Callable, Sequence
 import pandas as pd
 import streamlit as st
 
+from ui.i18n import LANGS, guide, tr
 from config import APP_TITLE, DISCLAIMER, QUESTIONNAIRE_URL, is_mock_mode
 from data.repository import get_repository
 from services.perf import TARGETS_SECONDS, end_page, fmt_seconds
@@ -740,7 +741,7 @@ def demo_banner() -> None:
 
 
 def disclaimer() -> None:
-    st.markdown(f'<div class="disclaimer"><span>{DISCLAIMER}</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="disclaimer"><span>{tr(DISCLAIMER)}</span></div>', unsafe_allow_html=True)
 
 
 def page_header(title: str, subtitle: str) -> None:
@@ -750,21 +751,23 @@ def page_header(title: str, subtitle: str) -> None:
     st.markdown(
         f"<div class='page-head'><div class='eyebrow-row'><span class='eyebrow'>{APP_TITLE}</span>"
         f"<a class='q-link' href='{QUESTIONNAIRE_URL}' target='_blank' rel='noopener'>Questionnaire ↗</a></div>"
-        f"<h1>{title}</h1><div class='subtitle'>{subtitle}</div></div>",
+        f"<h1>{tr(title)}</h1><div class='subtitle'>{subtitle}</div></div>",
         unsafe_allow_html=True,
     )
+    guide(title)
 
 
 def chart_caption(text: str) -> None:
     """Plain-language description of a chart, for screen readers and for anyone who
     finds the chart itself hard to read. Rendered visibly beneath the figure."""
-    st.markdown(f"<p class='figcap'>{_html.escape(text)}</p>", unsafe_allow_html=True)
+    with st.expander(tr("About this chart")):
+        st.markdown(f"<p class='figcap'>{_html.escape(text)}</p>", unsafe_allow_html=True)
 
 
 def section(title: str, caption: str = "") -> None:
     """Styled section heading with an optional right-aligned caption."""
     cap = f"<span class='section-cap'>{caption}</span>" if caption else ""
-    st.markdown(f"<div class='section'><span class='section-title'>{title}</span>{cap}</div>",
+    st.markdown(f"<div class='section'><span class='section-title'>{tr(title)}</span>{cap}</div>",
                 unsafe_allow_html=True)
 
 
@@ -838,6 +841,20 @@ def _confirm_sign_out() -> None:
             st.rerun()
 
 
+def _pick(label, options, key, **kw):
+    """Segmented control that cannot be left empty: clicking the active option again (deselect) keeps the
+    previous choice. The widget has its own key so the stored value is never written after it renders."""
+    ss = st.session_state
+    wkey = f"_{key}_w"
+    ss[wkey] = ss[key]
+
+    def _keep():
+        if ss[wkey] is not None:
+            ss[key] = ss[wkey]
+
+    st.segmented_control(label, options=options, key=wkey, on_change=_keep, **kw)
+
+
 def sidebar_controls() -> None:
     repo = get_repository()
     status = repo.get_data_status()
@@ -847,6 +864,7 @@ def sidebar_controls() -> None:
     ss.setdefault("ticker", stocks.ticker.iloc[0])
     ss.setdefault("as_of", status["as_of"])
     ss.setdefault("horizon", "t+1")
+    ss.setdefault("lang", "en")
     if ss.pop("_reset_as_of", False):  # requested by an empty-state action on the previous run
         ss["as_of"] = status["as_of"]
 
@@ -857,35 +875,36 @@ def sidebar_controls() -> None:
             f"<div class='brand-tag'>Explainable ML · S&amp;P SL20 constituents</div></div></div>",
             unsafe_allow_html=True,
         )
-        st.markdown("<div class='sb-label'>Selection</div>", unsafe_allow_html=True)
+        _pick(tr("Language"), list(LANGS), "lang", format_func=LANGS.get)
+        st.markdown(f"<div class='sb-label'>{tr('Selection')}</div>", unsafe_allow_html=True)
 
         labels = {r.ticker: f"{r.ticker} — {r.name}" for r in stocks.itertuples()}
-        st.selectbox("Stock", options=list(labels), format_func=labels.get, key="ticker")
-        st.date_input("As-of date", key="as_of",
+        st.selectbox(tr("Stock"), options=list(labels), format_func=labels.get, key="ticker")
+        st.date_input(tr("As-of date"), key="as_of",
                       min_value=status.get("first_date", date(2022, 1, 3)), max_value=status["as_of"])
         with st.container(key="horizon-control"):
             st.selectbox(
-                "Prediction horizon",
+                tr("Prediction horizon"),
                 options=["t+1", "t+5"],
                 format_func=lambda value: (
-                    "Next trading day (t+1)" if value == "t+1"
-                    else "Five trading days (t+5)"
+                    tr("Next trading day (t+1)") if value == "t+1"
+                    else tr("Five trading days (t+5)")
                 ),
                 key="horizon",
                 help="Choose how far ahead the prediction is made.",
             )
 
         st.divider()
-        st.link_button("Open evaluation questionnaire", QUESTIONNAIRE_URL, use_container_width=True)
+        st.link_button(tr("Open evaluation questionnaire"), QUESTIONNAIRE_URL, use_container_width=True)
         st.markdown(
             "<div class='status'>"
-            f"<div class='status-row'><span class='k'>Data as of</span><span class='v'>{status['as_of']:%d %b %Y}</span></div>"
-            f"<div class='status-row'><span class='k'>Source</span><span class='v live'>{status['source']}</span></div>"
-            f"<div class='status-row'><span class='k'>Model</span><span class='v'>{status['model_version']}</span></div>"
+            f"<div class='status-row'><span class='k'>{tr('Data as of')}</span><span class='v'>{status['as_of']:%d %b %Y}</span></div>"
+            f"<div class='status-row'><span class='k'>{tr('Source')}</span><span class='v live'>{status['source']}</span></div>"
+            f"<div class='status-row'><span class='k'>{tr('Model')}</span><span class='v'>{status['model_version']}</span></div>"
             "</div>",
             unsafe_allow_html=True,
         )
-        if st.button("Sign out", use_container_width=True):
+        if st.button(tr("Sign out"), use_container_width=True):
             _confirm_sign_out()
 
 
@@ -904,7 +923,7 @@ def window(as_of: date, days: int) -> tuple[date, date]:
 def card(label: str, value: str, sub: str = "", tone: str = "") -> None:
     cls = f" kpi-{tone}" if tone else ""
     st.markdown(
-        f'<div class="kpi{cls}"><div class="kpi-label">{label}</div>'
+        f'<div class="kpi{cls}"><div class="kpi-label">{tr(label)}</div>'
         f'<div class="kpi-value">{value}</div><div class="kpi-sub">{sub}</div></div>',
         unsafe_allow_html=True,
     )

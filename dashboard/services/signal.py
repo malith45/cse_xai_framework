@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ui.i18n import tr
+
 WEAK_BELOW = 0.05     # |P(up) - cut-off| < 5 points  -> no clear signal
 STRONG_FROM = 0.10    # |P(up) - cut-off| >= 10 points -> strong signal (if the evidence supports it)
 MIN_GAIN = 0.02       # strong calls must beat all calls by at least 2 points out of sample
@@ -34,14 +36,14 @@ def strength_supported(rel: pd.DataFrame | None) -> bool:
 
 def headline(direction: str, p_up: float, threshold: float | None, supported: bool = True) -> tuple[str, str]:
     """(big text, small caption) for a prediction card."""
-    word = "Up" if direction == "up" else "Down"
+    word = tr("Up") if direction == "up" else tr("Down")
     s = strength(p_up, threshold)
     if s == "weak":
-        return "Unclear", f"leans {word.lower()} · P(up) is close to the model's cut-off"
+        return tr("Unclear"), f"→ {word} · P(up) ≈ cut-off"
     arrow = "▲ " if direction == "up" else "▼ "
     if not supported:
-        return arrow + word, "weak evidence at this horizon"
-    return arrow + word, ("strong signal" if s == "strong" else "moderate signal")
+        return arrow + word, tr("weak evidence at this horizon")
+    return arrow + word, tr("strong signal" if s == "strong" else "moderate signal")
 
 
 def cutoff_note(threshold: float | None) -> str:

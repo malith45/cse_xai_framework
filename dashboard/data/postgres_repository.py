@@ -210,9 +210,10 @@ class PostgresRepository(Repository):
     def get_sentiment_series(self, ticker: str, start: date, end: date) -> pd.DataFrame:
         if not self._has("sentiment_daily"):
             return pd.DataFrame(columns=["date", "company_score", "market_score", "article_count"])
-        d = self._q("""SELECT s.date, s.company_score, m.market_score, s.article_count
-                       FROM sentiment_daily s LEFT JOIN sentiment_daily m ON m.date = s.date AND m.ticker = '_MARKET'
-                       WHERE s.ticker = :t AND s.date BETWEEN :s AND :e ORDER BY s.date""", t=ticker, s=start, e=end)
+        # every trading day with market news, plus the company's score on days it was in the news
+        d = self._q("""SELECT m.date, s.company_score, m.market_score, COALESCE(s.article_count, 0) AS article_count
+                       FROM sentiment_daily m LEFT JOIN sentiment_daily s ON s.date = m.date AND s.ticker = :t
+                       WHERE m.ticker = '_MARKET' AND m.date BETWEEN :s AND :e ORDER BY m.date""", t=ticker, s=start, e=end)
         return self._dates(d, "date")
 
     def get_articles(self, ticker: str | None, start: date, end: date) -> pd.DataFrame:
@@ -220,9 +221,11 @@ class PostgresRepository(Repository):
         if not self._has("article"):
             return pd.DataFrame(columns=cols)
         if ticker:
-            d = self._q("SELECT published, headline, source, language, url, ticker, score FROM article "
-                        "WHERE ticker = :t AND trading_day BETWEEN :s AND :e ORDER BY published DESC", t=ticker, s=start, e=end)
+            d = self._q("SELECT published, trading_day, headline, source, language, url, ticker, score FROM article "
+                        "WHERE ticker = :t AND trading_day BETWEEN :s AND :e ORDER BY trading_day DESC", t=ticker, s=start, e=end)
         else:
-            d = self._q("SELECT published, headline, source, language, url, ticker, score FROM article "
-                        "WHERE trading_day BETWEEN :s AND :e ORDER BY published DESC LIMIT 500", s=start, e=end)
-        return self._dates(d, "published")
+            d = self._q("SELECT published, trading_day, headline, source, language, url, ticker, score FROM article "
+                        "WHERE trading_day BETWEEN :s AND :e ORDER BY trading_day DESC LIMIT 500", s=start, e=end)
+        d["published"] = pd.to_datetime(d["published"], errors="coerce").fillna(pd.to_datetime(d["trading_day"]))
+        d["ticker"] = d["ticker"].fillna("Market")
+        return self._dates(d, "published").drop(columns="trading_day")
