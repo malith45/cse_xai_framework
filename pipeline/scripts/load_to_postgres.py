@@ -10,6 +10,7 @@ one transaction, so a failed load never leaves the published tables half-written
 from __future__ import annotations
 
 import getpass
+import datetime
 import json
 import time
 import urllib.request
@@ -133,7 +134,13 @@ def main(folder: str):
 
 # --------------------------------------------------------------------------- HTTPS fallback (port 443)
 
-def _sql_type(dt) -> str:
+def _sql_type(dt, col=None) -> str:
+    # date columns arrive as Python date objects (object dtype); keep them DATE, as the direct path does,
+    # otherwise the dashboard's date comparisons fail (text >= date)
+    if col is not None and dt == object:
+        first = col.dropna().head(1)
+        if len(first) and isinstance(first.iloc[0], datetime.date) and not isinstance(first.iloc[0], datetime.datetime):
+            return "DATE"
     if pd.api.types.is_bool_dtype(dt):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(dt):
@@ -187,7 +194,7 @@ def load_over_https(url: str, files):
         name = f.stem
         df = pd.read_parquet(f)
         new = f"{name}__new"
-        cols = ", ".join(f'"{c}" {_sql_type(df[c].dtype)}' for c in df.columns)
+        cols = ", ".join(f'"{c}" {_sql_type(df[c].dtype, df[c])}' for c in df.columns)
         _q(url, f'DROP TABLE IF EXISTS "{new}"')
         _q(url, f'CREATE TABLE "{new}" ({cols})')
         ncol = len(df.columns)
