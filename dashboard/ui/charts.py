@@ -33,6 +33,9 @@ pio.templates["cse_dark"] = _t
 pio.templates.default = "cse_dark"
 
 
+_ink = [INK]   # readout colour of the current theme (gauge number)
+
+
 def apply_chart_theme(theme: str) -> None:
     """Keep Plotly text and hover surfaces aligned with the selected UI theme."""
     if theme == "light":
@@ -45,6 +48,7 @@ def apply_chart_theme(theme: str) -> None:
         _t.layout.legend.font.color = "#6B7280"
         _t.layout.hoverlabel.bgcolor = "#FFFFFF"
         _t.layout.hoverlabel.font.color = "#17233D"
+        _ink[0] = "#17233D"
     else:
         _t.layout.font.color = INK2
         _t.layout.title.font.color = MUTED
@@ -55,9 +59,21 @@ def apply_chart_theme(theme: str) -> None:
         _t.layout.legend.font.color = MUTED
         _t.layout.hoverlabel.bgcolor = "#161B26"
         _t.layout.hoverlabel.font.color = INK
+        _ink[0] = INK
     pio.templates.default = "cse_dark"
 
 CONFIG = {"displayModeBar": False, "responsive": True}
+
+
+def show_chart(fig, **kw):
+    """st.plotly_chart with the app's own theme: transparent backgrounds set on the figure itself (the
+    front end otherwise paints Streamlit's dark background, which broke the light theme)."""
+    import streamlit as st
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    kw.setdefault("use_container_width", True)
+    kw.setdefault("config", CONFIG)
+    kw["theme"] = None
+    return st.plotly_chart(fig, **kw)
 
 
 def polarity_label(value: float, pos: str = "Positive", neg: str = "Negative", neutral: str = "Neutral",
@@ -89,8 +105,8 @@ def gauge(value: float, title: str) -> go.Figure:
     # The bundled plotly.js ignores number.valueformat on indicators, so the readout is drawn
     # as a pre-formatted annotation instead of the indicator's own number.
     fig.add_annotation(x=0.5, y=0.08, xref="paper", yref="paper", text=f"{value:+.2f}", showarrow=False,
-                       font=dict(size=32, color=INK, family="Inter, system-ui, sans-serif"))
+                       font=dict(size=32, color=_ink[0], family="Inter, system-ui, sans-serif"))
     fig.add_annotation(x=0.5, y=-0.14, xref="paper", yref="paper", text=polarity_label(value), showarrow=False,
                        font=dict(size=12, color=tone, family="Inter, system-ui, sans-serif"))
-    fig.update_layout(height=240, margin=dict(l=24, r=24, t=44, b=30))
+    fig.update_layout(height=240, margin=dict(l=56, r=56, t=44, b=30))
     return fig

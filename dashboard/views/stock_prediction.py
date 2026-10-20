@@ -4,7 +4,7 @@ import streamlit as st
 from data.repository import get_repository
 from ui.i18n import tr
 from services.signal import cutoff_note, headline, reliability_sentence, strength, strength_supported
-from ui.charts import CONFIG
+from ui.charts import CONFIG, show_chart
 from ui.layout import (DOWN, MUTED, UP, card, chart_caption, footer, page_header, responsive_table, section,
                        selection, window)
 from ui.states import empty_state, try_fetch
@@ -71,7 +71,7 @@ else:
                        bgcolor="rgba(16,20,29,0.85)", bordercolor=colour, borderwidth=1, borderpad=4)
     fig.update_layout(height=400, xaxis_rangeslider_visible=False, hovermode="x unified",
                       legend=dict(font=dict(color=MUTED)))
-    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+    show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
     chart_caption(
         f"Daily price candles for {name} over the last 120 trading days, closing at Rs {last_close:,.2f} on "
         f"{as_of:%d %B}. The dashed line and {arrow} marker show the model's call for {active['target_date']:%d %B}: "

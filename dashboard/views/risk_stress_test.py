@@ -5,7 +5,7 @@ import streamlit as st
 from data.repository import get_repository
 from services.perf import TARGETS_SECONDS, fmt_seconds, timed
 from services.stress import simulate_returns, value_at_risk
-from ui.charts import CONFIG
+from ui.charts import CONFIG, show_chart
 from ui.i18n import tr
 from ui.layout import (DOWN, MUTED, UP, card, chart_caption, fmt_lkr, footer, page_header, responsive_table,
                        section, selection)
@@ -107,7 +107,7 @@ for conf, dash, pos in ((0.95, "dash", "top right"), (0.99, "dot", "top left")):
                   annotation_bgcolor="rgba(16,20,29,0.85)")
 fig.update_layout(height=340, xaxis_title="cumulative return (%)", yaxis_title="paths", showlegend=False,
                   bargap=0.06)
-st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
 chart_caption(
     f"Histogram of {len(r):,} simulated {h}-day returns for {name}: most paths cluster near "
     f"{np.mean(r):+.2f}%, with a long left tail. The two dashed lines mark the loss that only 5% "

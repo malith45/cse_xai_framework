@@ -3,7 +3,7 @@ import streamlit as st
 from plotly.subplots import make_subplots
 
 from data.repository import get_repository
-from ui.charts import CONFIG, gauge, polarity_label
+from ui.charts import CONFIG, gauge, polarity_label, show_chart
 from ui.layout import (DOWN, INDIGO, UP, card, chart_caption, footer, page_header, pill, responsive_table,
                        section, selection, window)
 from ui.i18n import tr
@@ -74,7 +74,7 @@ with left:
         fig.update_yaxes(title_text="S&P SL20", secondary_y=True, showgrid=False)
         fig.update_layout(height=360, hovermode="x unified", margin=dict(t=44),
                           legend=dict(entrywidth=0.45, entrywidthmode="fraction"))
-        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+        show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
         first = h.iloc[0]
         chart_caption(
             f"Two lines over the last {rng or '6M'}: the solid ASPI line moved from {first.aspi:,.0f} to "
@@ -84,8 +84,8 @@ with left:
 with right:
     section("Market sentiment")
     if sent:
-        st.plotly_chart(gauge(sent["score"], f"{sent['article_count']} articles scored today"),
-                        use_container_width=True, config=CONFIG)
+        show_chart(gauge(sent["score"], f"{sent['article_count']} articles scored today"),
+                        use_container_width=True, config=CONFIG, theme=None)
         chart_caption(f"Dial from −1 (very negative) to +1 (very positive). Today's news tone is "
                       f"{sent['score']:+.2f}, which reads as {polarity_label(sent['score']).split(' ', 1)[1].lower()}, "
                       f"based on {sent['article_count']} articles.")
@@ -101,7 +101,7 @@ with right:
         ))
         b.update_layout(height=210, showlegend=False, yaxis=dict(visible=False), title="Breadth", bargap=0.45,
                         xaxis=dict(showgrid=False))
-        st.plotly_chart(b, use_container_width=True, config=CONFIG)
+        show_chart(b, use_container_width=True, config=CONFIG, theme=None)
         chart_caption(f"Three bars counting shares that rose ({breadth['advances']}), fell "
                       f"({breadth['declines']}) or were unchanged ({breadth['unchanged']}) on the day.")
 

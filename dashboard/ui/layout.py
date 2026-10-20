@@ -225,6 +225,8 @@ hr, [data-testid="stDivider"] { border-color: var(--line) !important; opacity: 1
   min-width: 360px !important;
   max-width: 360px !important;
 }
+/* Streamlit slides a closed menu left by its default width; with the wider menu a strip stayed on screen */
+[data-testid="stSidebar"][aria-expanded="false"] { transform: translateX(-100%) !important; margin-left: -360px !important; }
 body:has(.theme-light) [data-testid="stSidebar"] { border-right-color: #E2E7ED; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 0; }
 [data-testid="stSidebarHeader"] { padding-bottom: 0; }
@@ -266,8 +268,11 @@ body:has(.theme-light) [data-testid="stSidebar"] { border-right-color: #E2E7ED; 
 [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .brand) { position: static; }
 [data-testid="stSidebarNav"] { padding-top: 0.6rem !important; }
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] .brand) {
-  position: absolute; top: 0.85rem; left: 1rem; right: 1rem; z-index: 2;
+  position: absolute; top: 0.85rem; left: 1rem; right: 3.1rem; z-index: 2;
 }
+/* the close-menu button must stay above the brand card (on phones it is the only way to close the menu) */
+[data-testid="stSidebarHeader"] { position: relative; z-index: 3; }
+[data-testid="stSidebarHeader"] [data-testid="stSidebarCollapseButton"] { display: block !important; }
 .brand {
   display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.7rem;
   border: 1px solid var(--line); border-radius: 16px; background: var(--surface);
@@ -457,6 +462,8 @@ body:has(.theme-light) .st-key-horizon-control [data-baseweb="select"] > div:fir
 [data-testid="stMetricLabel"] p { color: var(--muted) !important; font-size: 0.68rem !important; font-weight: 600 !important;
   text-transform: uppercase; letter-spacing: 0.08em; white-space: normal !important; }
 [data-testid="stMetricValue"] { font-weight: 800; letter-spacing: -0.03em; font-size: 1.9rem; color: var(--ink); }
+[data-testid="stMetricDelta"], [data-testid="stMetricDelta"] div { color: var(--ink2) !important; opacity: 1 !important; }
+[data-testid="stMetricDelta"] svg { display: none; }
 [data-testid="stExpander"] details {
   background: var(--surface); border: 1px solid var(--line) !important; border-radius: var(--r-md) !important;
 }
@@ -867,6 +874,14 @@ def sidebar_controls() -> None:
     ss.setdefault("lang", "en")
     if ss.pop("_reset_as_of", False):  # requested by an empty-state action on the previous run
         ss["as_of"] = status["as_of"]
+    # a date typed by hand can fall outside the data range (or be cleared); keep it inside before the widget renders
+    lo, hi = status.get("first_date", date(2022, 1, 3)), status["as_of"]
+    if not isinstance(ss.get("as_of"), date):
+        ss["as_of"] = hi
+    elif ss["as_of"] < lo:
+        ss["as_of"] = lo
+    elif ss["as_of"] > hi:
+        ss["as_of"] = hi
 
     with st.sidebar:
         st.markdown(
@@ -880,8 +895,7 @@ def sidebar_controls() -> None:
 
         labels = {r.ticker: f"{r.ticker} — {r.name}" for r in stocks.itertuples()}
         st.selectbox(tr("Stock"), options=list(labels), format_func=labels.get, key="ticker")
-        st.date_input(tr("As-of date"), key="as_of",
-                      min_value=status.get("first_date", date(2022, 1, 3)), max_value=status["as_of"])
+        st.date_input(tr("As-of date"), key="as_of", min_value=lo, max_value=hi)
         with st.container(key="horizon-control"):
             st.selectbox(
                 tr("Prediction horizon"),

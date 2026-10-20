@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from data.repository import get_repository
-from ui.charts import CONFIG, polarity_label
+from ui.charts import CONFIG, polarity_label, show_chart
 from ui.i18n import tr
 from ui.layout import (DOWN, INDIGO, UP, chart_caption, footer, page_header, responsive_table, section,
                        selection, window)
@@ -46,7 +46,7 @@ else:
     fig.add_hline(y=0, line_color="#2A3140", line_width=1)
     fig.update_layout(height=340, hovermode="closest", yaxis=dict(title="news tone (−1 … +1)", range=[-1, 1]),
                       legend=dict(orientation="h", y=1.12, x=0, entrywidth=0.45, entrywidthmode="fraction"))
-    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+    show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
 
     mk_last = s.dropna(subset=["market_score"]).iloc[-1]
     c1, c2, c3 = st.columns(3)

@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from data.repository import get_repository
-from ui.charts import CONFIG
+from ui.charts import CONFIG, show_chart
 from ui.layout import DOWN, MUTED, UP, chart_caption, footer, page_header, section, selection
 from ui.states import empty_state, try_fetch
 
@@ -49,7 +49,7 @@ with left:
         fig.update_layout(height=440, xaxis_title="mean |SHAP| (average size of the nudge)", bargap=0.35,
                           xaxis=dict(range=[0, float(g.mean_abs_shap.max()) * 1.28]),  # room for the value labels
                           yaxis=dict(tickfont=dict(size=12, color="#B4BDCC"), showgrid=False))
-        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+        show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
         top = g.iloc[::-1]
         chart_caption(
             f"Horizontal bars ranking the twelve most influential signals for the {horizon} model. "
@@ -95,7 +95,7 @@ with right:
                           legend=dict(orientation="h", y=1.12, x=0),
                           xaxis=dict(range=[min(running) - 0.22 * span, max(running) + 0.22 * span]),
                           yaxis=dict(tickfont=dict(size=12, color="#B4BDCC"), showgrid=False))
-        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+        show_chart(fig, use_container_width=True, config=CONFIG, theme=None)
         pos = c[c.shap > 0]
         neg = c[c.shap < 0]
         chart_caption(
